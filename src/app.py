@@ -5,9 +5,9 @@
 
 #I installed chocolatey and CURL
 
-from flask import Flask, request, make_response 
+from flask import Flask, request, make_response, render_template 
  
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates')
 
 
 
@@ -16,8 +16,14 @@ def index():
   response = make_response('This iss the main page\n  ')
   response.status_code = 202
   response.headers['content-type'] = 'text/plain',
-  return response 
+  return response  
 
+
+@app.route('/recipes')
+def recipes():
+  myvalue = 'myvalue'
+  myresult = 2 + 2
+  return render_template('index.html', myvalue=myvalue, myresult=myresult)
 
 @app.route('/second_endpoint', methods = ['GET', 'POST'])
 def hello(): 
