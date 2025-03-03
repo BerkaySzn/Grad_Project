@@ -5,6 +5,7 @@
 
 #I installed chocolatey and CURL
 
+import pandas as pd
 from flask import Flask, request, make_response, render_template 
  
 app = Flask(__name__, template_folder='templates')
@@ -19,20 +20,26 @@ def index():
   return response  
 
 
-@app.route('/recipes')
-def recipes():
-  myvalue = 'myvalue'
-  myresult = 2 + 2
-  return render_template('index.html', myvalue=myvalue, myresult=myresult)
-
-@app.route('/second_endpoint', methods = ['GET', 'POST'])
-def hello(): 
+@app.route('/login_page', methods = ['GET', 'POST'])
+def login():
   if request.method == 'GET':
-    return "You made a GET request"
+    return render_template('index.html')
   elif request.method == 'POST':
-    return "You made a POST request"
-  else:
-    return "You hacked the system"
+    username = request.form.get('username')
+    password = request.form.get('password')
+
+    if username == 'abc' and password == '123':
+      return render_template('photo_upload.html')
+    else:
+      return "Failure"
+
+
+@app.route('/photo_upload', methods = ['GET', 'POST'])
+def photo_upload(): 
+  if request.method == 'GET':
+    return render_template('photo_upload.html')
+  elif request.method == 'POST':
+    return "Photo uploaded"
 
 
 
@@ -45,7 +52,7 @@ def greet(name):
   else:
     return 'Some parameters are missing'
 
-@app.route('/handşe_url_params')
+@app.route('/handle_url_params')
 def handle_params():
   return str(request.args)
 

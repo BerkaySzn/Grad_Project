@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8">
     <title>Flask App</title>
-  </head>
-
-  <head>  
-    <h1> Hello World </h1>
-    <p> {{ myvalue }}</p>
-    <p> {{ myresult }}</p>
-  </head>
+</head>
+<body>
+    <h1>Login Page</h1>
+    <form method="POST" action="{{ url_for('login') }}">
+        <input type="text" name="username" placeholder="Username"><br>
+        <input type="password" name="password" placeholder="Password"><br>
+        <input type="submit" value="Login">
+    </form>
+</body>
 </html>
