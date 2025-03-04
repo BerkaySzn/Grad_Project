@@ -8,22 +8,20 @@
 import pandas as pd
 from flask import Flask, request, make_response, render_template 
  
-app = Flask(__name__, template_folder='templates')
+app = Flask(__name__, template_folder='templates', static_folder='static', static_url_path='/')
 
 
 
 @app.route('/')
 def index():
-  response = make_response('This iss the main page\n  ')
-  response.status_code = 202
-  response.headers['content-type'] = 'text/plain',
-  return response  
+    return render_template('home_page.html')
 
+  
 
-@app.route('/login_page', methods = ['GET', 'POST'])
+@app.route('/login', methods = ['GET', 'POST'])
 def login():
   if request.method == 'GET':
-    return render_template('index.html')
+    return render_template('login.html')
   elif request.method == 'POST':
     username = request.form.get('username')
     password = request.form.get('password')
@@ -41,20 +39,11 @@ def photo_upload():
   elif request.method == 'POST':
     return "Photo uploaded"
 
+ 
 
-
-@app.route('/greet/<name>')
-def greet(name):
-  if 'greeting' in request.args.keys() and 'name' in request.args.keys():
-    greeting = request.args.get('greetings')
-    name = request.args.get('name')
-    return f'{greeting}, {name}'
-  else:
-    return 'Some parameters are missing'
-
-@app.route('/handle_url_params')
-def handle_params():
-  return str(request.args)
+@app.route('/recipes')
+def recipes():
+  return render_template('recipes.html')
 
 
  
