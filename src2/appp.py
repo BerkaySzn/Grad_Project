@@ -21,7 +21,7 @@ def index():
 @app.route('/login', methods = ['GET', 'POST'])
 def login():
   if request.method == 'GET':
-    return render_template('login.html')
+    return render_template('loginn.html')
   elif request.method == 'POST':
     username = request.form.get('username')
     password = request.form.get('password')
@@ -43,7 +43,7 @@ def photo_upload():
 
 @app.route('/recipes')
 def recipes():
-  return render_template('recipes.html')
+  return render_template('recipess.html')
 
 
  
