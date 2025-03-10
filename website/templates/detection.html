@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Detected Ingredients</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css">
+<script>
+tailwind.config = {
+theme: {
+extend: {
+colors: {
+primary: '#4F46E5',
+secondary: '#10B981'
+},
+borderRadius: {
+'none': '0px',
+'sm': '4px',
+DEFAULT: '8px',
+'md': '12px',
+'lg': '16px',
+'xl': '20px',
+'2xl': '24px',
+'3xl': '32px',
+'full': '9999px',
+'button': '8px'
+}
+}
+}
+}
+</script>
+<style>
+:where([class^="ri-"])::before { content: "\f3c2"; }
+</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+<nav class="bg-white shadow-sm">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="flex items-center justify-between h-16">
+      <div class="flex items-center">
+        <a href="#" class="text-2xl font-['Pacifico'] text-primary">logo</a>
+        <div class="ml-10 flex items-center space-x-8">
+          <a href="#" class="text-gray-900 font-medium">Home</a>
+          <a href="#" class="text-gray-500 hover:text-gray-900">About</a>
+          <a href="#" class="text-gray-500 hover:text-gray-900">Services</a>
+          <a href="#" class="text-gray-500 hover:text-gray-900">Contact</a>
+          <a href="#" class="text-gray-500 hover:text-gray-900">Favorites</a>
+        </div>
+      </div>
+      <div class="flex items-center">
+        <div class="relative">
+          <i class="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+          <input type="text" placeholder="Search recipes..." class="pl-10 pr-4 py-2 w-64 rounded-full bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm">
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+<div class="max-w-7xl mx-auto px-4 py-8">
+<header class="mb-8">
+<h1 class="text-3xl font-bold text-gray-900 text-center">Detected Ingredients</h1>
+</header>
+<main class="flex flex-col items-center">
+<div class="w-full max-w-2xl bg-white rounded-lg shadow-sm p-6 mb-8">
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-xl font-semibold text-gray-800">Ingredients List</h2>
+<span class="text-sm text-gray-500" id="ingredientCount"></span>
+</div>
+<div id="ingredientsList" class="space-y-3">
+</div>
+</div>
+<div class="flex gap-4 w-full max-w-2xl">
+<button onclick="showAllIngredients()" class="flex-1 bg-white text-primary border border-primary py-3 px-6 rounded-button font-medium hover:bg-primary hover:text-white transition-colors duration-200 cursor-pointer whitespace-nowrap">
+See All
+</button>
+<button onclick="goToRecipe()" class="flex-1 bg-primary text-white py-3 px-6 rounded-button font-medium hover:bg-primary/90 transition-colors duration-200 cursor-pointer whitespace-nowrap">
+Go to Recipe
+</button>
+</div>
+</main>
+</div>
+<div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+<div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
+<div class="flex justify-between items-center mb-4">
+<h3 class="text-xl font-semibold">All Ingredients</h3>
+<button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
+<i class="ri-close-line ri-xl"></i>
+</button>
+</div>
+<div id="modalIngredientsList" class="space-y-3 max-h-[60vh] overflow-y-auto"></div>
+</div>
+</div>
+<script>
+const ingredients = [
+{ name: "Fresh Tomatoes", amount: "4 medium", category: "Vegetables" },
+{ name: "Extra Virgin Olive Oil", amount: "2 tbsp", category: "Oils" },
+{ name: "Fresh Basil Leaves", amount: "1 cup", category: "Herbs" },
+{ name: "Garlic Cloves", amount: "3 cloves", category: "Vegetables" },
+{ name: "Sea Salt", amount: "1 tsp", category: "Seasonings" },
+{ name: "Black Pepper", amount: "1/2 tsp", category: "Seasonings" },
+{ name: "Mozzarella Cheese", amount: "8 oz", category: "Dairy" },
+{ name: "Balsamic Vinegar", amount: "1 tbsp", category: "Condiments" }
+];
+function renderIngredient(ingredient) {
+return `
+<div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+<div>
+<p class="font-medium text-gray-900">${ingredient.name}</p>
+<p class="text-sm text-gray-500">${ingredient.amount} · ${ingredient.category}</p>
+</div>
+<i class="ri-checkbox-circle-line text-secondary ri-xl"></i>
+</div>
+`;
+}
+function initializeIngredients() {
+const ingredientsList = document.getElementById('ingredientsList');
+const count = document.getElementById('ingredientCount');
+ingredientsList.innerHTML = ingredients
+.slice(0, 5)
+.map(renderIngredient)
+.join('');
+count.textContent = `${ingredients.length} items`;
+}
+function showAllIngredients() {
+const modalList = document.getElementById('modalIngredientsList');
+modalList.innerHTML = ingredients
+.map(renderIngredient)
+.join('');
+document.getElementById('modal').classList.remove('hidden');
+}
+function closeModal() {
+document.getElementById('modal').classList.add('hidden');
+}
+function goToRecipe() {
+const notification = document.createElement('div');
+notification.className = 'fixed bottom-4 right-4 bg-secondary text-white px-6 py-3 rounded shadow-lg transition-opacity duration-300';
+notification.textContent = 'Redirecting to recipe page...';
+document.body.appendChild(notification);
+setTimeout(() => {
+notification.style.opacity = '0';
+setTimeout(() => notification.remove(), 300);
+}, 2000);
+}
+document.addEventListener('DOMContentLoaded', initializeIngredients);
+</script>
+</body>
+</html>
