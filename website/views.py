@@ -8,19 +8,23 @@ from werkzeug.utils import secure_filename
 from PIL import Image
 import io
 from .utils.object_detection import ObjectDetector
+import pyodbc
 
 views = Blueprint('views', __name__)
 detector = ObjectDetector()  # Initialize the YOLO model
 
 # Map class IDs to ingredient names
 INGREDIENT_MAP = {
-    0: "tomato",
-    1: "onion",
-    2: "garlic",
-    3: "potato",
-    4: "carrot",
-    # Add all your class IDs and their corresponding ingredient names here
+    1: "apple",
+    2: "orange"
 }
+
+# Add connection string at the top with other imports
+connection_string = (
+    "DRIVER={ODBC Driver 18 for SQL Server};"
+    "SERVER=127.0.0.1\\MSSQLSERVER01;DATABASE=RecipeDatabase;"
+    "Trusted_Connection=yes;TrustServerCertificate=yes;"
+)
 
 @views.route('/', methods=['GET', 'POST'])
 def home():
@@ -30,53 +34,78 @@ def home():
 @login_required
 def upload_image():
     if 'image' not in request.files:
+        print("No image in request.files")
         flash('No image uploaded', 'error')
         return jsonify({'error': 'No image uploaded'}), 400
     
     file = request.files['image']
     if file.filename == '':
+        print("No selected file")
         flash('No image selected', 'error')
         return jsonify({'error': 'No image selected'}), 400
     
     if file:
-        # Read the image file
-        image_bytes = file.read()
-        
         try:
+            # Read the image file
+            image_bytes = file.read()
+            
             # Detect ingredients
-            detections = detector.detect_ingredients(image_bytes)
+            print("Starting ingredient detection...")
+            try:
+                detections = detector.detect_ingredients(image_bytes)
+                print(f"Detections: {detections}")
+                
+                # Convert detections to the format expected by your code
+                class_ids_list = [int(d['class']) for d in detections]
+                
+            except Exception as e:
+                print(f"Error in detect_ingredients: {str(e)}")
+                import traceback
+                print(f"Traceback: {traceback.format_exc()}")
+                return jsonify({'error': f'Error detecting ingredients: {str(e)}'}), 500
             
             # Get annotated image
-            annotated_image = detector.detect_and_draw(image_bytes)
+            print("Getting annotated image...")
+            try:
+                annotated_image = detector.detect_and_draw(image_bytes)
+                print("Annotated image received")
+            except Exception as e:
+                print(f"Error in detect_and_draw: {str(e)}")
+                import traceback
+                print(f"Traceback: {traceback.format_exc()}")
+                return jsonify({'error': f'Error creating annotated image: {str(e)}'}), 500
             
-            # Filter detections with confidence > 0.5 and map class IDs to names
-            ingredients = []
-            for detection in detections:
-                if detection['confidence'] > 0.5:
-                    class_id = int(detection['class'])
-                    if class_id in INGREDIENT_MAP:
-                        ingredients.append({
-                            'name': INGREDIENT_MAP[class_id],
-                            'confidence': detection['confidence'],
-                            'bbox': detection['bbox']
-                        })
+            # Process the detected class IDs to map them to ingredient names
+            detected_ingredients = []
+            for class_id in class_ids_list:
+                if class_id in INGREDIENT_MAP:
+                    detected_ingredients.append({
+                        'name': INGREDIENT_MAP[class_id],
+                        'confidence': next((d['confidence'] for d in detections if d['class'] == class_id), 0.0),
+                        'bbox': next((d['bbox'] for d in detections if d['class'] == class_id), [])
+                    })
             
-            if not ingredients:
+            if not detected_ingredients:
+                print("No ingredients detected")
                 flash('No ingredients detected in the image', 'error')
                 return jsonify({'error': 'No ingredients detected'}), 400
             
             # Find recipes that match these ingredients
-            recipes = find_recipes_by_ingredients([ing['name'] for ing in ingredients])
+            recipes = find_recipes_by_ingredients([ing['name'] for ing in detected_ingredients])
+            print(f"Found {len(recipes)} matching recipes")
             
             # Return the results
             return jsonify({
                 'success': True,
-                'ingredients': ingredients,
+                'ingredients': detected_ingredients,
                 'recipes': recipes,
                 'annotated_image': annotated_image.decode('latin1')
             })
             
         except Exception as e:
+            print(f"Error processing image: {str(e)}")
+            import traceback
+            print(f"Traceback: {traceback.format_exc()}")
             flash('Error processing image', 'error')
             return jsonify({'error': str(e)}), 500
     
@@ -84,33 +113,70 @@ def upload_image():
     return jsonify({'error': 'Invalid image file'}), 400
 
 def find_recipes_by_ingredients(ingredients):
-    # This is a placeholder function
-    # In a real implementation, you would query the database to find recipes
-    # that contain the identified ingredients
-    
-    # For now, return some dummy recipes
-    dummy_recipes = [
-        {
-            'id': 1,
-            'name': 'Tomato Soup',
-            'ingredients': ['tomato', 'onion', 'garlic', 'basil'],
-            'instructions': 'Cook tomatoes, onions, and garlic. Blend and season.',
-            'prep_time': 10,
-            'cook_time': 20,
-            'image_url': 'https://example.com/tomato_soup.jpg'
-        },
-        {
-            'id': 2,
-            'name': 'Pasta Sauce',
-            'ingredients': ['tomato', 'onion', 'garlic', 'oregano'],
-            'instructions': 'Sauté onions and garlic. Add tomatoes and simmer.',
-            'prep_time': 5,
-            'cook_time': 30,
-            'image_url': 'https://example.com/pasta_sauce.jpg'
-        }
-    ]
-    
-    return dummy_recipes
+    """Find recipes based on detected ingredients."""
+    try:
+        # Convert ingredient names to type IDs based on INGREDIENT_MAP
+        ingredient_types = []
+        for ingredient in ingredients:
+            for type_id, name in INGREDIENT_MAP.items():
+                if name == ingredient:
+                    ingredient_types.append(type_id)
+        
+        if not ingredient_types:
+            print("No valid ingredient types found")
+            return []
+
+        # Convert the list to a tuple for SQL query
+        types_tuple = tuple(ingredient_types)
+        
+        # Construct the query
+        if len(types_tuple) == 1:
+            query = f"""
+                SELECT Recipes_ID, Recipes_Name, Ingredients
+                FROM RECIPES
+                WHERE Ingredients_Type = {types_tuple[0]}
+            """
+        else:
+            # If you want to handle multiple ingredients in the future
+            query = f"""
+                SELECT Recipes_ID, Recipes_Name, Ingredients
+                FROM RECIPES
+                WHERE Ingredients_Type IN {types_tuple}
+            """
+
+        print(f"Executing query: {query}")
+
+        # Execute the query
+        with pyodbc.connect(connection_string) as conn:
+            cursor = conn.cursor()
+            cursor.execute(query)
+            rows = cursor.fetchall()
+
+        if not rows:
+            print("No recipes found.")
+            return []
+
+        # Convert the database results to the expected format
+        recipes = []
+        for row in rows:
+            recipe = {
+                'id': row[0],
+                'name': row[1],
+                'ingredients': row[2].split(',') if row[2] else [],  # Assuming ingredients are comma-separated
+                'instructions': 'Instructions will be added later',  # You can add this column to your database
+                'prep_time': 15,  # Default values, you can add these columns to your database
+                'cook_time': 30,
+                'image_url': 'https://example.com/recipe.jpg'  # You can add this column to your database
+            }
+            recipes.append(recipe)
+
+        return recipes
+
+    except Exception as e:
+        print(f"Error fetching recipes: {e}")
+        import traceback
+        print(f"Traceback: {traceback.format_exc()}")
+        return []
 
 @views.route('/favorites', methods=['GET'])
 @login_required
