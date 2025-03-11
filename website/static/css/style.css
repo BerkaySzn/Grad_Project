@@ -124,4 +124,95 @@ footer {
 #preview-container {
     width: 100%;
     height: 100%;
+}
+
+/* Simple styles for Object Detection API */
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+
+h1 {
+    margin-bottom: 20px;
+}
+
+.upload-form {
+    margin-top: 20px;
+}
+
+.upload-btn {
+    margin-left: 10px;
+}
+
+/* Keep some basic Bootstrap overrides */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Basic styling for results */
+#results {
+    margin-top: 30px;
+}
+
+#results img {
+    max-width: 100%;
+    margin-bottom: 20px;
+}
+
+#results ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+#results li {
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+}
+
+.alert-danger {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+
+.ingredient-item {
+    font-size: 16px;
+    margin: 10px 0;
+    padding: 5px 0;
+}
+
+#results h2 {
+    margin-bottom: 20px;
+}
+
+.border {
+    border-radius: 4px;
+    background-color: #fff;
+}
+
+.btn-outline-secondary {
+    border-color: #333;
+    color: #333;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #333;
+    color: #fff;
+}
+
+.btn-primary {
+    padding: 10px 30px;
+    font-size: 16px;
+    border-radius: 20px;
 } 

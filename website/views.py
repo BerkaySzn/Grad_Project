@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, flash, jsonify, redirect, url_for, send_file
+from flask import Blueprint, render_template, request, flash, jsonify, redirect, url_for, send_file, session
 from flask_login import login_required, current_user
 from .models import Recipe, Ingredient, Favorite
 from . import db
@@ -26,23 +26,18 @@ connection_string = (
     "Trusted_Connection=yes;TrustServerCertificate=yes;"
 )
 
-@views.route('/', methods=['GET', 'POST'])
+@views.route('/', methods=['GET'])
 def home():
     return render_template("home.html", user=current_user)
 
 @views.route('/upload-image', methods=['POST'])
-@login_required
 def upload_image():
     if 'image' not in request.files:
-        print("No image in request.files")
-        flash('No image uploaded', 'error')
         return jsonify({'error': 'No image uploaded'}), 400
     
     file = request.files['image']
     if file.filename == '':
-        print("No selected file")
-        flash('No image selected', 'error')
-        return jsonify({'error': 'No image selected'}), 400
+        return jsonify({'error': 'No selected file'}), 400
     
     if file:
         try:
@@ -50,7 +45,6 @@ def upload_image():
             image_bytes = file.read()
             
             # Detect ingredients
-            print("Starting ingredient detection...")
             try:
                 detections = detector.detect_ingredients(image_bytes)
                 print(f"Detections: {detections}")
@@ -65,7 +59,6 @@ def upload_image():
                 return jsonify({'error': f'Error detecting ingredients: {str(e)}'}), 500
             
             # Get annotated image
-            print("Getting annotated image...")
             try:
                 annotated_image = detector.detect_and_draw(image_bytes)
                 print("Annotated image received")
@@ -86,19 +79,15 @@ def upload_image():
                     })
             
             if not detected_ingredients:
-                print("No ingredients detected")
-                flash('No ingredients detected in the image', 'error')
                 return jsonify({'error': 'No ingredients detected'}), 400
             
-            # Find recipes that match these ingredients
-            recipes = find_recipes_by_ingredients([ing['name'] for ing in detected_ingredients])
-            print(f"Found {len(recipes)} matching recipes")
+            # Store detected ingredients in session
+            session['detected_ingredients'] = [ing['name'] for ing in detected_ingredients]
             
             # Return the results
             return jsonify({
                 'success': True,
                 'ingredients': detected_ingredients,
-                'recipes': recipes,
                 'annotated_image': annotated_image.decode('latin1')
             })
             
@@ -106,10 +95,8 @@ def upload_image():
             print(f"Error processing image: {str(e)}")
             import traceback
             print(f"Traceback: {traceback.format_exc()}")
-            flash('Error processing image', 'error')
             return jsonify({'error': str(e)}), 500
     
-    flash('Invalid image file', 'error')
     return jsonify({'error': 'Invalid image file'}), 400
 
 def find_recipes_by_ingredients(ingredients):
@@ -221,4 +208,15 @@ def remove_favorite(recipe_id):
     else:
         flash('Recipe not in favorites.', category='error')
     
-    return redirect(url_for('views.favorites')) 
+    return redirect(url_for('views.favorites'))
+
+@views.route('/recipes')
+def recipes():
+    # Get the detected ingredients from session
+    detected_ingredients = session.get('detected_ingredients', [])
+    if not detected_ingredients:
+        flash('No ingredients detected. Please upload an image first.', 'error')
+        return redirect(url_for('views.home'))
+    
+    recipes = find_recipes_by_ingredients(detected_ingredients)
+    return render_template('recipe_results.html', user=current_user, ingredients=detected_ingredients, recipes=recipes) 

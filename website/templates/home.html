@@ -1,47 +1,31 @@
 {% extends "base.html" %}
 
-{% block title %}Home - Recipe Finder{% endblock %}
+{% block title %}Object Detection API{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow border-0">
-                <div class="card-body p-0">
-                    <div class="row g-0">
-                        <!-- Left side - Photo area -->
-                        <div class="col-md-6">
-                            <div class="healthy-photo-container d-flex justify-content-center align-items-center">
-                                <div id="preview-container" class="text-center">
-                                    <img id="preview" src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" alt="Healthy Ingredients" class="img-fluid healthy-photo">
-                                </div>
-                            </div>
+<div class="container">
+    <h1>Object Detection API</h1>
+    
+    <form id="uploadForm">
+        Upload Image <input type="file" id="imageInput" accept="image/*" required>
+        <input type="submit" value="Upload">
+    </form>
+
+    <div id="results" style="display: none;">
+        <div class="row mt-4">
+            <div class="col-12">
+                <h2>We detected your ingredients!!</h2>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="border p-3">
+                            <div id="ingredientList"></div>
                         </div>
-                        
-                        <!-- Right side - Logo, text and button -->
-                        <div class="col-md-6">
-                            <div class="text-center py-5 px-4">
-                                <!-- Logo -->
-                                <div class="logo-container mx-auto mb-4" style="background-color: #006356;">
-                                    <!-- Using a styled G letter as logo -->
-                                    <span class="logo-text">G</span>
-                                </div>
-                                
-                                <!-- Tagline -->
-                                <h1 class="tagline mb-5">What's for Dinner?<br>Let Your Ingredients Decide!</h1>
-                                
-                                <!-- Upload button -->
-                                <div class="upload-container">
-                                    <form action="/upload-image" method="post" enctype="multipart/form-data">
-                                        <div class="d-grid">
-                                            <label for="image" class="btn btn-primary btn-lg upload-btn">
-                                                <i class="bi bi-camera"></i> Photo Upload
-                                                <input type="file" id="image" name="image" accept="image/*" class="d-none" required>
-                                            </label>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
+                        <button onclick="document.getElementById('results').style.display='none'" class="btn btn-outline-secondary mt-3">See all</button>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-center">
+                            <h3>Let's get the recipes</h3>
+                            <button class="btn btn-primary mt-3" onclick="window.location.href='/recipes'">Go to recipes</button>
                         </div>
                     </div>
                 </div>
@@ -53,132 +37,43 @@
 
 {% block scripts %}
 <script>
-    // Image preview and upload handling
-    const imageInput = document.getElementById('image');
-    const previewContainer = document.getElementById('preview-container');
-    
-    function formatConfidence(confidence) {
-        return (confidence * 100).toFixed(1) + '%';
-    }
-    
-    if (imageInput) {
-        imageInput.addEventListener('change', function() {
-            const file = this.files[0];
-            if (file) {
-                const formData = new FormData();
-                formData.append('image', file);
-                
-                // Show loading state
-                previewContainer.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2">Analyzing image...</p></div>';
-                
-                // Send image to server for YOLO detection
-                fetch('/upload-image', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Create results container
-                        const resultsContainer = document.createElement('div');
-                        resultsContainer.className = 'row';
-                        
-                        // Left column - Image and ingredients
-                        const leftCol = document.createElement('div');
-                        leftCol.className = 'col-md-6';
-                        
-                        // Display annotated image
-                        const img = new Image();
-                        img.src = 'data:image/jpeg;base64,' + btoa(data.annotated_image);
-                        img.className = 'img-fluid healthy-photo mb-3';
-                        img.alt = 'Analyzed Image';
-                        leftCol.appendChild(img);
-                        
-                        // Display detected ingredients
-                        const ingredientsList = document.createElement('div');
-                        ingredientsList.className = 'card shadow-sm';
-                        ingredientsList.innerHTML = `
-                            <div class="card-body">
-                                <h4 class="card-title">Detected Ingredients:</h4>
-                                <ul class="list-group list-group-flush">
-                                    ${data.ingredients.map(ing => `
-                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            <span class="badge bg-primary">${ing.name}</span>
-                                            <span class="text-muted">Confidence: ${formatConfidence(ing.confidence)}</span>
-                                        </li>
-                                    `).join('')}
-                                </ul>
-                            </div>
-                        `;
-                        leftCol.appendChild(ingredientsList);
-                        
-                        // Right column - Recipe suggestions
-                        const rightCol = document.createElement('div');
-                        rightCol.className = 'col-md-6';
-                        
-                        // Display recipe suggestions
-                        const recipesCard = document.createElement('div');
-                        recipesCard.className = 'card shadow-sm';
-                        recipesCard.innerHTML = `
-                            <div class="card-body">
-                                <h4 class="card-title">Recipe Suggestions:</h4>
-                                ${data.recipes.map(recipe => `
-                                    <div class="card mb-3">
-                                        <div class="card-body">
-                                            <h5 class="card-title">${recipe.name}</h5>
-                                            <p class="card-text">
-                                                <small class="text-muted">
-                                                    Prep: ${recipe.prep_time} mins | Cook: ${recipe.cook_time} mins
-                                                </small>
-                                            </p>
-                                            <p class="card-text">
-                                                <strong>Ingredients:</strong><br>
-                                                ${recipe.ingredients.join(', ')}
-                                            </p>
-                                            <p class="card-text">
-                                                <strong>Instructions:</strong><br>
-                                                ${recipe.instructions}
-                                            </p>
-                                            ${user.is_authenticated ? `
-                                                <form action="/add-favorite/${recipe.id}" method="post">
-                                                    <button type="submit" class="btn btn-outline-primary btn-sm">
-                                                        <i class="bi bi-heart"></i> Add to Favorites
-                                                    </button>
-                                                </form>
-                                            ` : ''}
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        `;
-                        rightCol.appendChild(recipesCard);
-                        
-                        // Add columns to results container
-                        resultsContainer.appendChild(leftCol);
-                        resultsContainer.appendChild(rightCol);
-                        
-                        // Clear previous content and show results
-                        previewContainer.innerHTML = '';
-                        previewContainer.appendChild(resultsContainer);
-                    } else {
-                        // Show error message
-                        previewContainer.innerHTML = `
-                            <div class="alert alert-danger" role="alert">
-                                ${data.error || 'Error processing image'}
-                            </div>
-                        `;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    previewContainer.innerHTML = `
-                        <div class="alert alert-danger" role="alert">
-                            Error uploading image. Please try again.
-                        </div>
-                    `;
-                });
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData();
+        const imageFile = document.getElementById('imageInput').files[0];
+        formData.append('image', imageFile);
+
+        try {
+            const response = await fetch('/upload-image', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            
+            if (data.error) {
+                alert(data.error);
+                return;
             }
-        });
-    }
+
+            // Display results
+            document.getElementById('results').style.display = 'block';
+            
+            // Display ingredients
+            const ingredientList = document.getElementById('ingredientList');
+            ingredientList.innerHTML = '';
+            data.ingredients.forEach(ingredient => {
+                const div = document.createElement('div');
+                div.className = 'ingredient-item';
+                div.textContent = `-${ingredient.name} (${(ingredient.confidence * 100).toFixed(0)})`;
+                ingredientList.appendChild(div);
+            });
+
+        } catch (error) {
+            alert('Error uploading image. Please try again.');
+            console.error('Error:', error);
+        }
+    });
 </script>
 {% endblock %}
