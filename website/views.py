@@ -21,8 +21,8 @@ INGREDIENT_MAP = {
 
 # Add connection string at the top with other imports
 connection_string = (
-    "DRIVER={ODBC Driver 18 for SQL Server};"
-    "SERVER=127.0.0.1\\MSSQLSERVER01;DATABASE=RecipeDatabase;"
+    "DRIVER={ODBC Driver 17 for SQL Server};"
+    "SERVER=DESKTOP-OPP7BQ4\\MSSQLSERVER01;DATABASE=Grad_Project_DB;"
     "Trusted_Connection=yes;TrustServerCertificate=yes;"
 )
 
@@ -102,62 +102,115 @@ def upload_image():
 def find_recipes_by_ingredients(ingredients):
     """Find recipes based on detected ingredients."""
     try:
-        # Convert ingredient names to type IDs based on INGREDIENT_MAP
-        ingredient_types = []
-        for ingredient in ingredients:
-            for type_id, name in INGREDIENT_MAP.items():
-                if name == ingredient:
-                    ingredient_types.append(type_id)
+        print(f"Searching for recipes with ingredients: {ingredients}")
         
-        if not ingredient_types:
-            print("No valid ingredient types found")
-            return []
-
-        # Convert the list to a tuple for SQL query
-        types_tuple = tuple(ingredient_types)
-        
-        # Construct the query
-        if len(types_tuple) == 1:
-            query = f"""
-                SELECT Recipes_ID, Recipes_Name, Ingredients
-                FROM RECIPES
-                WHERE Ingredients_Type = {types_tuple[0]}
-            """
-        else:
-            # If you want to handle multiple ingredients in the future
-            query = f"""
-                SELECT Recipes_ID, Recipes_Name, Ingredients
-                FROM RECIPES
-                WHERE Ingredients_Type IN {types_tuple}
-            """
-
-        print(f"Executing query: {query}")
-
-        # Execute the query
+        # First, let's verify the database connection and table structure
         with pyodbc.connect(connection_string) as conn:
             cursor = conn.cursor()
+            
+            # Check if RECIPES table exists
+            try:
+                cursor.execute("SELECT TOP 1 * FROM RECIPES")
+                columns = [column[0] for column in cursor.description]
+                print(f"Found RECIPES table with columns: {columns}")
+            except Exception as e:
+                print(f"Error accessing RECIPES table: {e}")
+                # Create the table if it doesn't exist
+                cursor.execute("""
+                    CREATE TABLE RECIPES (
+                        Recipes_ID INT PRIMARY KEY IDENTITY(1,1),
+                        Recipes_Name NVARCHAR(255),
+                        Ingredients NVARCHAR(MAX),
+                        Instructions NVARCHAR(MAX),
+                        Prep_Time INT,
+                        Cook_Time INT,
+                        Image_URL NVARCHAR(500),
+                        Ingredients_Type INT
+                    )
+                """)
+                print("Created RECIPES table")
+                
+                # Insert sample recipes
+                cursor.execute("""
+                    INSERT INTO RECIPES (Recipes_Name, Ingredients, Instructions, Prep_Time, Cook_Time, Image_URL, Ingredients_Type)
+                    VALUES 
+                    ('Apple Pie', 'apple,sugar,flour', 'Mix ingredients and bake', 15, 30, '/static/img/apple-pie.jpg', 1),
+                    ('Orange Juice', 'orange,water', 'Squeeze oranges and mix with water', 5, 0, '/static/img/orange-juice.jpg', 2)
+                """)
+                conn.commit()
+                print("Inserted sample recipes")
+            
+            # Now proceed with the recipe search
+            ingredient_types = []
+            for ingredient in ingredients:
+                print(f"Looking for type ID for ingredient: {ingredient}")
+                for type_id, name in INGREDIENT_MAP.items():
+                    if name.lower() == ingredient.lower():
+                        ingredient_types.append(type_id)
+                        print(f"Found type ID {type_id} for {ingredient}")
+            
+            if not ingredient_types:
+                print("No valid ingredient types found in INGREDIENT_MAP")
+                print(f"Available ingredients in map: {INGREDIENT_MAP}")
+                return []
+
+            # Convert the list to a tuple for SQL query
+            types_tuple = tuple(ingredient_types)
+            print(f"Ingredient type IDs to search for: {types_tuple}")
+            
+            # Construct the query to find recipes that use ANY of the detected ingredients
+            if len(types_tuple) == 1:
+                query = f"""
+                    SELECT 
+                        r.Recipes_ID,
+                        r.Recipes_Name,
+                        r.Ingredients,
+                        r.Instructions,
+                        r.Prep_Time,
+                        r.Cook_Time,
+                        r.Image_URL
+                    FROM RECIPES r
+                    WHERE r.Ingredients_Type = {types_tuple[0]}
+                """
+            else:
+                query = f"""
+                    SELECT 
+                        r.Recipes_ID,
+                        r.Recipes_Name,
+                        r.Ingredients,
+                        r.Instructions,
+                        r.Prep_Time,
+                        r.Cook_Time,
+                        r.Image_URL
+                    FROM RECIPES r
+                    WHERE r.Ingredients_Type IN {types_tuple}
+                """
+
+            print(f"Executing SQL query: {query}")
             cursor.execute(query)
             rows = cursor.fetchall()
+            print(f"Query returned {len(rows)} recipes")
 
-        if not rows:
-            print("No recipes found.")
-            return []
+            if not rows:
+                print("No recipes found in database matching the ingredients")
+                return []
 
-        # Convert the database results to the expected format
-        recipes = []
-        for row in rows:
-            recipe = {
-                'id': row[0],
-                'name': row[1],
-                'ingredients': row[2].split(',') if row[2] else [],  # Assuming ingredients are comma-separated
-                'instructions': 'Instructions will be added later',  # You can add this column to your database
-                'prep_time': 15,  # Default values, you can add these columns to your database
-                'cook_time': 30,
-                'image_url': 'https://example.com/recipe.jpg'  # You can add this column to your database
-            }
-            recipes.append(recipe)
+            # Convert the database results to the expected format
+            recipes = []
+            for row in rows:
+                recipe = {
+                    'id': row[0],
+                    'name': row[1],
+                    'ingredients': row[2].split(',') if row[2] else [],
+                    'instructions': row[3] if row[3] else 'Instructions will be added later',
+                    'prep_time': row[4] if row[4] else 15,
+                    'cook_time': row[5] if row[5] else 30,
+                    'image_url': row[6] if row[6] else '/static/img/default-recipe.jpg'
+                }
+                recipes.append(recipe)
+                print(f"Added recipe: {recipe['name']} with ingredients: {recipe['ingredients']}")
 
-        return recipes
+            return recipes
 
     except Exception as e:
         print(f"Error fetching recipes: {e}")
@@ -219,4 +272,33 @@ def recipes():
         return redirect(url_for('views.home'))
     
     recipes = find_recipes_by_ingredients(detected_ingredients)
-    return render_template('recipe_results.html', user=current_user, ingredients=detected_ingredients, recipes=recipes) 
+    return render_template('recipe_results.html', user=current_user, ingredients=detected_ingredients, recipes=recipes)
+
+@views.route('/all-ingredients')
+def all_ingredients():
+    # Get the detected ingredients from session
+    ingredients = session.get('detected_ingredients', [])
+    return render_template('all_ingredients.html', ingredients=ingredients)
+
+@views.route('/add-ingredient', methods=['POST'])
+def add_ingredient():
+    try:
+        data = request.get_json()
+        ingredient = data.get('ingredient')
+        
+        if not ingredient:
+            return jsonify({'success': False, 'error': 'No ingredient specified'}), 400
+            
+        # Get current ingredients from session
+        current_ingredients = session.get('detected_ingredients', [])
+        
+        # Add new ingredient if it's not already in the list
+        if ingredient not in current_ingredients:
+            current_ingredients.append(ingredient)
+            session['detected_ingredients'] = current_ingredients
+            
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        print(f"Error adding ingredient: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500 

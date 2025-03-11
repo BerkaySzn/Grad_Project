@@ -3,71 +3,102 @@
 {% block title %}Recipe Results - Recipe Finder{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-12">
-        <div class="card shadow mb-4">
-            <div class="card-body">
-                <h2 class="card-title">Identified Ingredients</h2>
-                <div class="d-flex flex-wrap">
-                    {% for ingredient in ingredients %}
-                    <span class="badge bg-primary me-2 mb-2 p-2">{{ ingredient }}</span>
-                    {% endfor %}
-                </div>
-            </div>
+<div class="container mt-4">
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <h2>Identified Ingredients</h2>
+            {% for ingredient in ingredients %}
+            <span class="badge bg-primary me-2">{{ ingredient }}</span>
+            {% endfor %}
         </div>
     </div>
-</div>
 
-<div class="row">
-    <div class="col-md-12">
-        <div class="card shadow">
-            <div class="card-body">
-                <h2 class="card-title">Recipes You Can Make</h2>
-                <p class="text-muted">Based on the ingredients we identified, here are some recipes you might like:</p>
-                
-                <div class="row">
-                    {% for recipe in recipes %}
-                    <div class="col-md-4 mb-4">
-                        <div class="card h-100 shadow-sm">
-                            {% if recipe.image_url %}
-                            <img src="{{ recipe.image_url }}" class="card-img-top" alt="{{ recipe.name }}">
-                            {% else %}
-                            <img src="https://via.placeholder.com/300x200?text=No+Image" class="card-img-top" alt="No Image">
-                            {% endif %}
-                            <div class="card-body">
-                                <h5 class="card-title">{{ recipe.name }}</h5>
-                                <p class="card-text"><strong>Prep Time:</strong> {{ recipe.prep_time }} mins | <strong>Cook Time:</strong> {{ recipe.cook_time }} mins</p>
-                                <p class="card-text"><strong>Ingredients:</strong></p>
-                                <ul>
-                                    {% for ingredient in recipe.ingredients %}
-                                    <li>{{ ingredient }}</li>
-                                    {% endfor %}
-                                </ul>
-                                <p class="card-text"><strong>Instructions:</strong></p>
-                                <p class="card-text">{{ recipe.instructions }}</p>
-                            </div>
-                            <div class="card-footer bg-transparent">
-                                {% if user.is_authenticated %}
-                                <form action="/add-favorite/{{ recipe.id }}" method="post">
-                                    <button type="submit" class="btn btn-outline-primary w-100">
-                                        <i class="bi bi-heart"></i> Add to Favorites
-                                    </button>
-                                </form>
-                                {% else %}
-                                <a href="/login" class="btn btn-outline-primary w-100">Login to Save</a>
-                                {% endif %}
+    <div class="card shadow">
+        <div class="card-body">
+            <h2>Recipes You Can Make</h2>
+            <p class="text-muted">Based on the ingredients we identified, here are some recipes you might like:</p>
+            
+            {% for recipe in recipes %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h3 class="card-title">{{ recipe.name }}</h3>
+                            <p>Prep Time: {{ recipe.prep_time }} mins | Cook Time: {{ recipe.cook_time }} mins</p>
+                            
+                            <h5>Ingredients:</h5>
+                            <ul>
+                                {% for ingredient in recipe.ingredients %}
+                                <li>{{ ingredient }}</li>
+                                {% endfor %}
+                            </ul>
+                            
+                            <h5>Instructions:</h5>
+                            <p>{{ recipe.instructions }}</p>
+                            
+                            <div class="mt-3">
+                                <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#recipeModal{{ recipe.id }}">
+                                    See Details
+                                </button>
                             </div>
                         </div>
                     </div>
-                    {% endfor %}
                 </div>
-                
-                {% if not recipes %}
-                <div class="alert alert-info">
-                    No recipes found for these ingredients. Try adding more ingredients or check back later!
-                </div>
-                {% endif %}
             </div>
+
+            <!-- Recipe Details Modal -->
+            <div class="modal fade" id="recipeModal{{ recipe.id }}" tabindex="-1" aria-labelledby="recipeModalLabel{{ recipe.id }}" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="recipeModalLabel{{ recipe.id }}">{{ recipe.name }} ⭐</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="bg-light p-3 text-center mb-3" style="height: 300px;">
+                                        <p class="mt-5">Recipe Photo</p>
+                                    </div>
+                                    <a href="/" class="btn btn-primary w-100">Go to upload section</a>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="recipe-details">
+                                        <p><strong>Time:</strong> {{ recipe.prep_time + recipe.cook_time }}min</p>
+                                        <p><strong>Servings:</strong> 2-3</p>
+                                        <p><strong>Calories:</strong> 70kcal</p>
+                                        <p><strong>All Ingredients:</strong> {{ ", ".join(recipe.ingredients) }}</p>
+                                        
+                                        <h6 class="mt-4">Nutritional values:</h6>
+                                        <ul class="list-unstyled">
+                                            <li>Carb: 20gr</li>
+                                            <li>Pro: 70gr</li>
+                                            <li>Protein: 310gr</li>
+                                        </ul>
+                                        
+                                        <h6 class="mt-4">Making Steps:</h6>
+                                        <ol>
+                                            <li>First</li>
+                                            <li>Second</li>
+                                            <li>Third</li>
+                                            <li>Fourth</li>
+                                            <li>Fifth</li>
+                                            <li>Sixth</li>
+                                        </ol>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            {% if not recipes %}
+            <div class="alert alert-info">
+                No recipes found for these ingredients. Try adding more ingredients!
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

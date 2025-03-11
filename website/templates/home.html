@@ -1,31 +1,66 @@
 {% extends "base.html" %}
 
-{% block title %}Object Detection API{% endblock %}
+{% block title %}Recipe Finder{% endblock %}
 
 {% block content %}
 <div class="container">
-    <h1>Object Detection API</h1>
-    
-    <form id="uploadForm">
-        Upload Image <input type="file" id="imageInput" accept="image/*" required>
-        <input type="submit" value="Upload">
-    </form>
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-8">
+            <div class="text-center mb-5">
+                <h1 class="display-4 mb-3">Find Recipes from Your Ingredients</h1>
+                <p class="lead text-muted">Upload a photo of your ingredients and let us suggest delicious recipes!</p>
+            </div>
 
-    <div id="results" style="display: none;">
-        <div class="row mt-4">
-            <div class="col-12">
-                <h2>We detected your ingredients!!</h2>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="border p-3">
-                            <div id="ingredientList"></div>
+            <div class="upload-container">
+                <form id="uploadForm" class="text-center">
+                    <div class="upload-area mb-4" id="uploadArea">
+                        <input type="file" id="imageInput" accept="image/*" class="d-none" required>
+                        <div class="upload-content" id="uploadContent">
+                            <i class="bi bi-cloud-upload display-4 mb-3"></i>
+                            <h4>Drag & Drop your image here</h4>
+                            <p class="text-muted">or</p>
+                            <button type="button" class="btn btn-primary btn-lg px-5" onclick="document.getElementById('imageInput').click()">
+                                Choose File
+                            </button>
                         </div>
-                        <button onclick="document.getElementById('results').style.display='none'" class="btn btn-outline-secondary mt-3">See all</button>
+                        <div id="previewContainer" class="preview-container d-none">
+                            <img id="imagePreview" src="" alt="Preview" class="img-fluid rounded">
+                            <button type="button" class="btn btn-link text-danger remove-preview" onclick="removePreview()">
+                                Remove
+                            </button>
+                        </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="text-center">
-                            <h3>Let's get the recipes</h3>
-                            <button class="btn btn-primary mt-3" onclick="window.location.href='/recipes'">Go to recipes</button>
+                    <button type="submit" class="btn btn-success btn-lg px-5" id="uploadButton" disabled>
+                        <i class="bi bi-search me-2"></i>Find Recipes
+                    </button>
+                </form>
+            </div>
+
+            <div id="results" class="mt-5" style="display: none;">
+                <div class="card shadow">
+                    <div class="card-body">
+                        <h2 class="text-center mb-4">We detected your ingredients!</h2>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="ingredients-container p-4 bg-light rounded">
+                                    <h4 class="mb-3">Detected Ingredients:</h4>
+                                    <div id="ingredientList" class="ingredient-list"></div>
+                                </div>
+                                <div class="text-center mt-3">
+                                    <a href="/all-ingredients" class="btn btn-outline-primary">
+                                        <i class="bi bi-list-check me-2"></i>See All Ingredients
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="text-center">
+                                    <h4 class="mb-3">Ready to cook?</h4>
+                                    <p class="text-muted">Let's find some delicious recipes with your ingredients!</p>
+                                    <button class="btn btn-primary btn-lg" onclick="window.location.href='/recipes'">
+                                        <i class="bi bi-book me-2"></i>View Recipes
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -33,47 +68,192 @@
         </div>
     </div>
 </div>
+
+<style>
+.upload-container {
+    margin: 2rem 0;
+}
+
+.upload-area {
+    border: 2px dashed #006356;
+    border-radius: 10px;
+    padding: 2rem;
+    text-align: center;
+    background-color: #f8f9fa;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.upload-area:hover {
+    background-color: #e9ecef;
+    border-color: #004d42;
+}
+
+.upload-area.dragover {
+    background-color: #e9ecef;
+    border-color: #004d42;
+}
+
+.upload-content {
+    color: #006356;
+}
+
+.preview-container {
+    position: relative;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.preview-container img {
+    max-height: 300px;
+    object-fit: contain;
+}
+
+.remove-preview {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    padding: 5px 10px;
+}
+
+.ingredient-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.ingredient-item {
+    background-color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+</style>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const formData = new FormData();
-        const imageFile = document.getElementById('imageInput').files[0];
-        formData.append('image', imageFile);
+const uploadArea = document.getElementById('uploadArea');
+const uploadContent = document.getElementById('uploadContent');
+const imageInput = document.getElementById('imageInput');
+const previewContainer = document.getElementById('previewContainer');
+const imagePreview = document.getElementById('imagePreview');
+const uploadButton = document.getElementById('uploadButton');
 
-        try {
-            const response = await fetch('/upload-image', {
-                method: 'POST',
-                body: formData
-            });
+// Drag and drop functionality
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    uploadArea.addEventListener(eventName, preventDefaults, false);
+});
 
-            const data = await response.json();
-            
-            if (data.error) {
-                alert(data.error);
-                return;
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+['dragenter', 'dragover'].forEach(eventName => {
+    uploadArea.addEventListener(eventName, highlight, false);
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+    uploadArea.addEventListener(eventName, unhighlight, false);
+});
+
+function highlight(e) {
+    uploadArea.classList.add('dragover');
+}
+
+function unhighlight(e) {
+    uploadArea.classList.remove('dragover');
+}
+
+uploadArea.addEventListener('drop', handleDrop, false);
+
+function handleDrop(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+
+    if (files.length > 0) {
+        handleFiles(files);
+    }
+}
+
+imageInput.addEventListener('change', function() {
+    handleFiles(this.files);
+});
+
+function handleFiles(files) {
+    if (files[0]) {
+        const file = files[0];
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+                uploadContent.classList.add('d-none');
+                previewContainer.classList.remove('d-none');
+                uploadButton.disabled = false;
             }
-
-            // Display results
-            document.getElementById('results').style.display = 'block';
-            
-            // Display ingredients
-            const ingredientList = document.getElementById('ingredientList');
-            ingredientList.innerHTML = '';
-            data.ingredients.forEach(ingredient => {
-                const div = document.createElement('div');
-                div.className = 'ingredient-item';
-                div.textContent = `-${ingredient.name} (${(ingredient.confidence * 100).toFixed(0)})`;
-                ingredientList.appendChild(div);
-            });
-
-        } catch (error) {
-            alert('Error uploading image. Please try again.');
-            console.error('Error:', error);
+            reader.readAsDataURL(file);
         }
-    });
+    }
+}
+
+function removePreview() {
+    imageInput.value = '';
+    imagePreview.src = '';
+    uploadContent.classList.remove('d-none');
+    previewContainer.classList.add('d-none');
+    uploadButton.disabled = true;
+}
+
+document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData();
+    const imageFile = document.getElementById('imageInput').files[0];
+    formData.append('image', imageFile);
+
+    try {
+        uploadButton.disabled = true;
+        uploadButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+
+        const response = await fetch('/upload-image', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+        
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        // Display results
+        document.getElementById('results').style.display = 'block';
+        
+        // Display ingredients
+        const ingredientList = document.getElementById('ingredientList');
+        ingredientList.innerHTML = '';
+        data.ingredients.forEach(ingredient => {
+            const div = document.createElement('div');
+            div.className = 'ingredient-item';
+            div.innerHTML = `
+                <i class="bi bi-check2-circle text-success me-2"></i>
+                ${ingredient.name}
+                <span class="ms-2 text-muted">${(ingredient.confidence * 100).toFixed(0)}%</span>
+            `;
+            ingredientList.appendChild(div);
+        });
+
+    } catch (error) {
+        alert('Error uploading image. Please try again.');
+        console.error('Error:', error);
+    } finally {
+        uploadButton.disabled = false;
+        uploadButton.innerHTML = '<i class="bi bi-search me-2"></i>Find Recipes';
+    }
+});
 </script>
 {% endblock %}
