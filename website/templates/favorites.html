@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}My Favorites - Recipe Finder{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-body">
+                <h2 class="card-title">My Favorite Recipes</h2>
+                
+                {% if recipes %}
+                <div class="row">
+                    {% for recipe in recipes %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100 shadow-sm">
+                            {% if recipe.image_url %}
+                            <img src="{{ recipe.image_url }}" class="card-img-top" alt="{{ recipe.name }}">
+                            {% else %}
+                            <img src="https://via.placeholder.com/300x200?text=No+Image" class="card-img-top" alt="No Image">
+                            {% endif %}
+                            <div class="card-body">
+                                <h5 class="card-title">{{ recipe.name }}</h5>
+                                <p class="card-text"><strong>Prep Time:</strong> {{ recipe.prep_time }} mins | <strong>Cook Time:</strong> {{ recipe.cook_time }} mins</p>
+                                <p class="card-text"><strong>Instructions:</strong></p>
+                                <p class="card-text">{{ recipe.instructions }}</p>
+                            </div>
+                            <div class="card-footer bg-transparent">
+                                <form action="/remove-favorite/{{ recipe.id }}" method="post">
+                                    <button type="submit" class="btn btn-outline-danger w-100">
+                                        <i class="bi bi-trash"></i> Remove from Favorites
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <p>You don't have any favorite recipes yet.</p>
+                    <a href="/" class="btn btn-primary">Find Recipes</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
