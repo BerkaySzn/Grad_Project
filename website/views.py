@@ -115,30 +115,7 @@ def find_recipes_by_ingredients(ingredients):
                 print(f"Found RECIPES table with columns: {columns}")
             except Exception as e:
                 print(f"Error accessing RECIPES table: {e}")
-                # Create the table if it doesn't exist
-                cursor.execute("""
-                    CREATE TABLE RECIPES (
-                        Recipes_ID INT PRIMARY KEY IDENTITY(1,1),
-                        Recipes_Name NVARCHAR(255),
-                        Ingredients NVARCHAR(MAX),
-                        Instructions NVARCHAR(MAX),
-                        Prep_Time INT,
-                        Cook_Time INT,
-                        Image_URL NVARCHAR(500),
-                        Ingredients_Type INT
-                    )
-                """)
-                print("Created RECIPES table")
-                
-                # Insert sample recipes
-                cursor.execute("""
-                    INSERT INTO RECIPES (Recipes_Name, Ingredients, Instructions, Prep_Time, Cook_Time, Image_URL, Ingredients_Type)
-                    VALUES 
-                    ('Apple Pie', 'apple,sugar,flour', 'Mix ingredients and bake', 15, 30, '/static/img/apple-pie.jpg', 1),
-                    ('Orange Juice', 'orange,water', 'Squeeze oranges and mix with water', 5, 0, '/static/img/orange-juice.jpg', 2)
-                """)
-                conn.commit()
-                print("Inserted sample recipes")
+                return []
             
             # Now proceed with the recipe search
             ingredient_types = []
@@ -162,28 +139,28 @@ def find_recipes_by_ingredients(ingredients):
             if len(types_tuple) == 1:
                 query = f"""
                     SELECT 
-                        r.Recipes_ID,
-                        r.Recipes_Name,
-                        r.Ingredients,
-                        r.Instructions,
-                        r.Prep_Time,
-                        r.Cook_Time,
-                        r.Image_URL
-                    FROM RECIPES r
-                    WHERE r.Ingredients_Type = {types_tuple[0]}
+                        Recipes_ID,
+                        Recipes_Name,
+                        Ingredients,
+                        Instructions,
+                        Prep_Time,
+                        Cook_Time,
+                        Image_URL
+                    FROM RECIPES
+                    WHERE Ingredients_Type = {types_tuple[0]}
                 """
             else:
                 query = f"""
                     SELECT 
-                        r.Recipes_ID,
-                        r.Recipes_Name,
-                        r.Ingredients,
-                        r.Instructions,
-                        r.Prep_Time,
-                        r.Cook_Time,
-                        r.Image_URL
-                    FROM RECIPES r
-                    WHERE r.Ingredients_Type IN {types_tuple}
+                        Recipes_ID,
+                        Recipes_Name,
+                        Ingredients,
+                        Instructions,
+                        Prep_Time,
+                        Cook_Time,
+                        Image_URL
+                    FROM RECIPES
+                    WHERE Ingredients_Type IN {types_tuple}
                 """
 
             print(f"Executing SQL query: {query}")
@@ -199,13 +176,13 @@ def find_recipes_by_ingredients(ingredients):
             recipes = []
             for row in rows:
                 recipe = {
-                    'id': row[0],
-                    'name': row[1],
-                    'ingredients': row[2].split(',') if row[2] else [],
-                    'instructions': row[3] if row[3] else 'Instructions will be added later',
-                    'prep_time': row[4] if row[4] else 15,
-                    'cook_time': row[5] if row[5] else 30,
-                    'image_url': row[6] if row[6] else '/static/img/default-recipe.jpg'
+                    'id': row[0],  # Recipes_ID
+                    'name': row[1],  # Recipes_Name
+                    'ingredients': row[2].split(',') if row[2] else [],  # Ingredients
+                    'instructions': row[3] if row[3] else 'Instructions will be added later',  # Instructions
+                    'prep_time': row[4] if row[4] else 15,  # Prep_Time
+                    'cook_time': row[5] if row[5] else 30,  # Cook_Time
+                    'image_url': row[6] if row[6] else '/static/img/default-recipe.jpg'  # Image_URL
                 }
                 recipes.append(recipe)
                 print(f"Added recipe: {recipe['name']} with ingredients: {recipe['ingredients']}")
