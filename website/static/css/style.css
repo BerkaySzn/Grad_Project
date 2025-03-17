@@ -11,6 +11,28 @@ body {
     transition: transform 0.3s ease;
 }
 
+/* Remove hover effect from modal cards */
+.modal .card,
+.modal .card:hover {
+    transform: none;
+    transition: none;
+}
+
+/* Prevent transparency changes on modal */
+.modal-content {
+    background-color: #fff !important;
+    opacity: 1 !important;
+}
+
+.modal-dialog {
+    opacity: 1 !important;
+}
+
+/* Remove any hover effects from modal content */
+.modal * {
+    transition: none !important;
+}
+
 .card:hover {
     transform: translateY(-5px);
 }

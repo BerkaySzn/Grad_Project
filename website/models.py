@@ -3,49 +3,57 @@ from flask_login import UserMixin
 from sqlalchemy.sql import func
 
 class User(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(150), unique=True)
-    password = db.Column(db.String(150))
-    first_name = db.Column(db.String(150))
+    __tablename__ = 'Users'
+    user_id = db.Column(db.Integer, primary_key=True)
+    first_name = db.Column(db.String(255), nullable=False)
+    last_name = db.Column(db.String(255), nullable=False)
+    email = db.Column(db.String(255), nullable=False)
+    password = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.DateTime)
     favorites = db.relationship('Favorite', backref='user', lazy=True)
 
-class Ingredient(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    # Many-to-many relationship with Recipe
-    recipes = db.relationship('RecipeIngredient', backref='ingredient', lazy=True)
+    # Required for Flask-Login
+    @property
+    def id(self):
+        return self.user_id
 
 class Recipe(db.Model):
-    __tablename__ = 'RECIPES'
-    Recipes_ID = db.Column(db.Integer, primary_key=True)
-    Recipes_Name = db.Column(db.String(255), nullable=False)
-    Ingredients = db.Column(db.Text)
-    Instructions = db.Column(db.Text)
-    Prep_Time = db.Column(db.Integer)
-    Cook_Time = db.Column(db.Integer)
-    Image_URL = db.Column(db.String(500))
-    Ingredients_Type = db.Column(db.Integer)
+    __tablename__ = 'Recipes'  # Using the newer Recipes table, not RECIPES
+    recipe_id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    photo = db.Column(db.String(255))
+    time = db.Column(db.Integer, nullable=False)
+    servings = db.Column(db.Integer, nullable=False)
+    calories = db.Column(db.Integer, nullable=False)
+    ranking = db.Column(db.Float)
+    
+    recipe_details = db.relationship('RecipeDetail', backref='recipe', lazy=True)
+    recipe_ingredients = db.relationship('RecipeIngredient', backref='recipe', lazy=True)
+    favorites = db.relationship('Favorite', backref='recipe', lazy=True)
 
-    def to_dict(self):
-        return {
-            'id': self.Recipes_ID,
-            'name': self.Recipes_Name,
-            'ingredients': self.Ingredients.split(',') if self.Ingredients else [],
-            'instructions': self.Instructions,
-            'prep_time': self.Prep_Time,
-            'cook_time': self.Cook_Time,
-            'image_url': self.Image_URL
-        }
+class Ingredient(db.Model):
+    __tablename__ = 'Ingredients'
+    ingr_id = db.Column(db.Integer, primary_key=True)
+    ingr_name = db.Column(db.String(255), nullable=False)
+    category = db.Column(db.String(255))
+    
+    recipe_ingredients = db.relationship('RecipeIngredient', backref='ingredient', lazy=True)
 
 class RecipeIngredient(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.id'), nullable=False)
-    ingredient_id = db.Column(db.Integer, db.ForeignKey('ingredient.id'), nullable=False)
-    quantity = db.Column(db.String(50))
-    unit = db.Column(db.String(50))
+    __tablename__ = 'Recipe_Ingredient'
+    recipe_id = db.Column(db.Integer, db.ForeignKey('Recipes.recipe_id'), primary_key=True)
+    ingr_id = db.Column(db.Integer, db.ForeignKey('Ingredients.ingr_id'), primary_key=True)
+    quantity = db.Column(db.String(255))
+    unit = db.Column(db.String(255))
+
+class RecipeDetail(db.Model):
+    __tablename__ = 'Recipe_Details'
+    detail_id = db.Column(db.Integer, primary_key=True)
+    recipe_id = db.Column(db.Integer, db.ForeignKey('Recipes.recipe_id'), nullable=False)
+    step_number = db.Column(db.Integer, nullable=False)
+    instruction_text = db.Column(db.String(255), nullable=False)
 
 class Favorite(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.id'), nullable=False)
-    date_added = db.Column(db.DateTime(timezone=True), default=func.now())
+    __tablename__ = 'Favorites'
+    user_id = db.Column(db.Integer, db.ForeignKey('Users.user_id'), primary_key=True)
+    recipe_id = db.Column(db.Integer, db.ForeignKey('Recipes.recipe_id'), primary_key=True)
