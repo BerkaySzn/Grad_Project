@@ -63,4 +63,4 @@ A web application that identifies ingredients from user-uploaded photos and sugg
 - Add more sophisticated recipe matching algorithms
 - Allow users to rate and review recipes
 - Add social sharing features
-- Implement dietary restrictions and preferences 
+- Implement dietary restrictions and preferences
