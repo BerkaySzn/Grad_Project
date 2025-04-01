@@ -26,32 +26,27 @@ class ObjectDetector:
         print("YOLO model loaded successfully")
 
     def detect_ingredients(self, image_bytes):
-        """Detect ingredients in an image."""
         try:
-            # Create temp directory if it doesn't exist
             temp_dir = "temp"
             if not os.path.exists(temp_dir):
                 os.makedirs(temp_dir)
 
-            # Save temporary image for YOLO prediction
             temp_path = os.path.join(temp_dir, "temp_image.jpg")
-
-            # Convert bytes to file
             with open(temp_path, "wb") as f:
                 f.write(image_bytes)
 
-            # Get detections
             results = self.model.predict(
                 source=temp_path, save=False, device=self.device
             )
 
-            # Process results
             detections = []
             for r in results:
                 for box in r.boxes:
                     class_id = int(box.cls[0])
                     coordinates = box.xywh[0].tolist()
-                    confidence = float(box.conf[0])
+                    confidence = (
+                        float(box.conf[0]) if box.conf is not None else 0.0
+                    )  # Hata kontrolü
 
                     detections.append(
                         {
@@ -61,8 +56,19 @@ class ObjectDetector:
                         }
                     )
 
-            print(f"Found {len(detections)} detections")
-            return detections
+            os.remove(temp_path)
+            if not os.listdir(temp_dir):
+                os.rmdir(temp_dir)
+
+            counts = {}
+            for d in detections:
+                class_id = d["class"]
+                if class_id in counts:
+                    counts[class_id] += 1
+                else:
+                    counts[class_id] = 1
+
+            return detections, counts
 
         except Exception as e:
             print(f"Error in detect_ingredients: {str(e)}")
