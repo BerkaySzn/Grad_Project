@@ -8,7 +8,7 @@
         <div class="card-body">
             <h2>Detected Ingredients</h2>
             {% for ingredient in ingredients %}
-            <span class="badge bg-primary me-2">{{ ingredient }}</span>
+            <span class="badge bg-primary me-2">{{ ingredient.name }}</span>
             {% endfor %}
         </div>
     </div>
