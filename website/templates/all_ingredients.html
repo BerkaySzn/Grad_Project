@@ -15,11 +15,14 @@
                     <div class="card-body">
                         <h2 class="card-title text-center mb-4">Detected Ingredients</h2>
                         
-                        <!-- Detected Ingredients List -->
-                        <div class="mb-4">
+                        <div id="ingredient-list" class="mb-4">
                             {% for ingredient in ingredients %}
                             <div class="ingredient-item p-3 mb-2 bg-light rounded">
-                                {{ ingredient }}
+                                {% if ingredient.name %}
+                                    {{ ingredient.name }}  
+                                {% else %}
+                                    {{ ingredient }}  
+                                {% endif %}
                             </div>
                             {% endfor %}
                         </div>
