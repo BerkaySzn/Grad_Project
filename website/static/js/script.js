@@ -37,3 +37,32 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     });
 }); 
+document.addEventListener('DOMContentLoaded', function() {
+    // Modelin getirdiği ingredient'leri düzgün şekilde listeye ekle
+    fetch('/get-ingredients')
+    .then(response => response.json())
+    .then(data => {
+        console.log("Modelden Gelen Ingredients:", data);  // Konsolda kontrol için
+
+        // Listeyi temizle ve güncelle
+        const ingredientList = document.getElementById('ingredient-list');
+        ingredientList.innerHTML = '';
+
+        data.ingredients.forEach(ingredient => {
+            const ingredientItem = document.createElement('div');
+            ingredientItem.className = 'ingredient-item p-3 mb-2 bg-light rounded';
+            
+            // Eğer ingredient nesne formatındaysa name al, değilse direkt yaz
+            if (typeof ingredient === 'object' && ingredient.name) {
+                ingredientItem.textContent = ingredient.name;
+            } else {
+                ingredientItem.textContent = ingredient;
+            }
+            
+            ingredientList.appendChild(ingredientItem);
+        });
+
+        console.log("Updated Ingredient List:", ingredientList.innerHTML);
+    })
+    .catch(error => console.error('Error fetching ingredients:', error));
+});
