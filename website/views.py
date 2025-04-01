@@ -50,6 +50,9 @@ def home():
     return render_template("home.html", user=current_user)
 
 
+from flask import request, jsonify, session
+
+
 @views.route("/upload-image", methods=["POST"])
 def upload_image():
     if "image" not in request.files:
@@ -62,77 +65,62 @@ def upload_image():
     if file:
         try:
             image_bytes = file.read()
-
-            try:
-                detections = detector.detect_ingredients(image_bytes)
-                print(f"Detections: {detections}")
-                class_ids_list = [int(d["class"]) for d in detections]
-
-            except Exception as e:
-                print(f"Error in detect_ingredients: {str(e)}")
-                import traceback
-
-                print(f"Traceback: {traceback.format_exc()}")
-                return jsonify({"error": f"Error detecting ingredients: {str(e)}"}), 500
-
-            try:
-                annotated_image = detector.detect_and_draw(image_bytes)
-                print("Annotated image received")
-            except Exception as e:
-                print(f"Error in detect_and_draw: {str(e)}")
-                import traceback
-
-                print(f"Traceback: {traceback.format_exc()}")
-                return (
-                    jsonify({"error": f"Error creating annotated image: {str(e)}"}),
-                    500,
-                )
+            detections, counts = detector.detect_ingredients(image_bytes)
 
             detected_ingredients = []
-            for class_id in class_ids_list:
+            confidence_scores = []  # Model doğruluk yüzdesini hesaplamak için liste
+
+            for d in detections:
+                class_id = d["class"]
+                confidence = d["confidence"]
+                confidence_scores.append(confidence)
+
                 if class_id in INGREDIENT_MAP:
                     detected_ingredients.append(
-                        {
-                            "name": INGREDIENT_MAP[class_id],
-                            "confidence": next(
-                                (
-                                    d["confidence"]
-                                    for d in detections
-                                    if d["class"] == class_id
-                                ),
-                                0.0,
-                            ),
-                            "bbox": next(
-                                (
-                                    d["bbox"]
-                                    for d in detections
-                                    if d["class"] == class_id
-                                ),
-                                [],
-                            ),
-                        }
+                        {"name": INGREDIENT_MAP[class_id], "count": counts[class_id]}
                     )
 
             if not detected_ingredients:
                 return jsonify({"error": "No ingredients detected"}), 400
 
-            session["detected_ingredients"] = [
-                ing["name"] for ing in detected_ingredients
-            ]
+            formatted_ingredients = []
+            ingredient_counts = {}
 
+            for item in detected_ingredients:
+                name = item["name"]
+                count = item["count"]
+                if name in ingredient_counts:
+                    ingredient_counts[name] += count
+                else:
+                    ingredient_counts[name] = count
+
+            for name, count in ingredient_counts.items():
+                if count > 1:
+                    formatted_ingredients.append({"name": f"{name} x{count}"})
+                else:
+                    formatted_ingredients.append({"name": name})
+
+            # Model doğruluğunu hesapla
+            if confidence_scores:
+                avg_confidence = round(
+                    sum(confidence_scores) / len(confidence_scores) * 100, 2
+                )
+            else:
+                avg_confidence = 0.0  # Eğer hiç confidence alınmadıysa %0 olarak göster
+
+            session["detected_ingredients"] = formatted_ingredients
+            print("Confidence Scores:", confidence_scores)
+            print("Average Confidence:", avg_confidence)
             return jsonify(
                 {
                     "success": True,
-                    "ingredients": detected_ingredients,
-                    "annotated_image": annotated_image.decode("latin1"),
+                    "ingredients": formatted_ingredients,
+                    "accuracy": f"{avg_confidence}%",
                 }
             )
 
         except Exception as e:
             print(f"Error processing image: {str(e)}")
-            import traceback
-
-            print(f"Traceback: {traceback.format_exc()}")
             return jsonify({"error": str(e)}), 500
 
     return jsonify({"error": "Invalid image file"}), 400
