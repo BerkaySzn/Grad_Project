@@ -18,7 +18,7 @@ class ObjectDetector:
     def __init__(self, model_path=None):
         """Initialize YOLO model."""
         if model_path is None:
-            model_path = "C:/Users/Monster/Desktop/best.pt_dosyası/best.pt"
+            model_path = "C:/Users/BERKAY/Desktop/runs/detect/bitirme_yolo_model3/weights/best.pt"
 
         print(f"Loading YOLO model from: {model_path}")
         self.model = YOLO(model_path)
@@ -35,6 +35,30 @@ class ObjectDetector:
             with open(temp_path, "wb") as f:
                 f.write(image_bytes)
 
+            # Read image and enhance edges
+            image = cv2.imdecode(np.frombuffer(image_bytes, np.uint8), cv2.IMREAD_COLOR)
+            
+            # Convert to grayscale for edge detection
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            
+            # Apply Gaussian blur to reduce noise
+            blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+            
+            # Edge detection using Canny
+            edges = cv2.Canny(blurred, 50, 150)
+            
+            # Dilate edges to make them more prominent
+            kernel = np.ones((3,3), np.uint8)
+            dilated_edges = cv2.dilate(edges, kernel, iterations=1)
+            
+            # Combine original image with enhanced edges
+            edge_mask = cv2.cvtColor(dilated_edges, cv2.COLOR_GRAY2BGR)
+            enhanced_image = cv2.addWeighted(image, 0.8, edge_mask, 0.2, 0)
+            
+            # Save the enhanced image
+            cv2.imwrite(temp_path, enhanced_image)
+
+            # Run YOLO detection on enhanced image
             results = self.model.predict(
                 source=temp_path, save=False, device=self.device
             )
@@ -46,7 +70,7 @@ class ObjectDetector:
                     coordinates = box.xywh[0].tolist()
                     confidence = (
                         float(box.conf[0]) if box.conf is not None else 0.0
-                    )  # Hata kontrolü
+                    )
 
                     detections.append(
                         {

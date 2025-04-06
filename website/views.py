@@ -33,7 +33,7 @@ detector = ObjectDetector()
 # Map YOLO class IDs to ingredient names
 INGREDIENT_MAP = {
     0: "aubergine",
-    1: "cabbage",
+    1: "apple",
     2: "carrot",
     3: "cauliflower",
     4: "garlic",
@@ -132,9 +132,22 @@ from sqlalchemy import text
 def find_recipes_by_ingredients(ingredients):
     """Find recipes based on detected ingredients."""
     try:
-        print(f"Searching for recipes with ingredients: {ingredients}")
+        # Clean up ingredient names (remove count suffixes like 'x1', 'x2')
+        cleaned_ingredients = []
+        for ingredient in ingredients:
+            if isinstance(ingredient, dict) and 'name' in ingredient:
+                # Extract just the ingredient name without the count
+                name = ingredient['name'].split(' x')[0]
+                cleaned_ingredients.append(name)
+            elif isinstance(ingredient, str):
+                name = ingredient.split(' x')[0]
+                cleaned_ingredients.append(name)
 
-        ingredient_names = ", ".join(f"'{ingredient}'" for ingredient in ingredients)
+        print(f"Searching for recipes with ingredients: {cleaned_ingredients}")
+
+        # Convert list of ingredients to comma-separated string of quoted names
+        ingredient_names = ", ".join(f"'{ingredient}'" for ingredient in cleaned_ingredients)
+        
         query = f"""
         WITH UserIngredients AS (
             SELECT ingr_id 
@@ -153,15 +166,13 @@ def find_recipes_by_ingredients(ingredients):
         recipe_list = []
 
         for row in result:
-            recipe_list.append(
-                {
-                    "recipe_id": row.recipe_id,
-                    "name": row.name,
-                    "match_count": row.match_count,
-                    "time": row.time,
-                    "calories": row.calories,
-                }
-            )
+            recipe_list.append({
+                "recipe_id": row.recipe_id,
+                "name": row.name,
+                "match_count": row.match_count,
+                "time": row.time,
+                "calories": row.calories,
+            })
 
         print(f"Found {len(recipe_list)} unique recipes")
         return recipe_list
@@ -169,7 +180,6 @@ def find_recipes_by_ingredients(ingredients):
     except Exception as e:
         print(f"Error fetching recipes: {e}")
         import traceback
-
         print(f"Traceback: {traceback.format_exc()}")
         return []
 
@@ -214,11 +224,15 @@ def remove_favorite_route(recipe_id):
 @views.route("/recipes")
 def recipes():
     detected_ingredients = session.get("detected_ingredients", [])
+    print("Debug - Detected ingredients from session:", detected_ingredients)
+    
     if not detected_ingredients:
         flash("No ingredients detected. Please upload an image first.", "error")
         return redirect(url_for("views.home"))
 
     recipes = find_recipes_by_ingredients(detected_ingredients)
+    print("Debug - Found recipes:", recipes)
+    
     return render_template(
         "recipe_results.html",
         user=current_user,
@@ -253,3 +267,27 @@ def add_ingredient():
     except Exception as e:
         print(f"Error adding ingredient: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@views.route("/get-recipe-details/<int:recipe_id>", methods=["GET"])
+def get_recipe_details_route(recipe_id):
+    try:
+        recipe = get_recipe_with_details(recipe_id)
+        if recipe:
+            return jsonify({
+                'ingredients': [
+                    {
+                        'name': ingredient['name'],
+                        'quantity': ingredient['quantity'],
+                        'unit': ingredient['unit']
+                    } for ingredient in recipe['ingredients']
+                ],
+                'instructions': [
+                    {'text': instruction['text']} for instruction in recipe['instructions']
+                ]
+            })
+        else:
+            return jsonify({'error': 'Recipe not found'}), 404
+    except Exception as e:
+        print(f"Error getting recipe details: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
