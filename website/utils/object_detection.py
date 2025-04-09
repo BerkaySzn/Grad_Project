@@ -16,7 +16,6 @@ class DetectionResult:
 
 class ObjectDetector:
     def __init__(self, model_path=None):
-        """Initialize YOLO model."""
         if model_path is None:
             model_path = "C:/Users/BERKAY/Desktop/runs/detect/bitirme_yolo_model3/weights/best.pt"
 
@@ -32,33 +31,10 @@ class ObjectDetector:
                 os.makedirs(temp_dir)
 
             temp_path = os.path.join(temp_dir, "temp_image.jpg")
-            with open(temp_path, "wb") as f:
-                f.write(image_bytes)
-
-            # Read image and enhance edges
+            
             image = cv2.imdecode(np.frombuffer(image_bytes, np.uint8), cv2.IMREAD_COLOR)
-            
-            # Convert to grayscale for edge detection
-            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            
-            # Apply Gaussian blur to reduce noise
-            blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-            
-            # Edge detection using Canny
-            edges = cv2.Canny(blurred, 50, 150)
-            
-            # Dilate edges to make them more prominent
-            kernel = np.ones((3,3), np.uint8)
-            dilated_edges = cv2.dilate(edges, kernel, iterations=1)
-            
-            # Combine original image with enhanced edges
-            edge_mask = cv2.cvtColor(dilated_edges, cv2.COLOR_GRAY2BGR)
-            enhanced_image = cv2.addWeighted(image, 0.8, edge_mask, 0.2, 0)
-            
-            # Save the enhanced image
-            cv2.imwrite(temp_path, enhanced_image)
+            cv2.imwrite(temp_path, image)
 
-            # Run YOLO detection on enhanced image
             results = self.model.predict(
                 source=temp_path, save=False, device=self.device
             )
@@ -80,10 +56,6 @@ class ObjectDetector:
                         }
                     )
 
-            os.remove(temp_path)
-            if not os.listdir(temp_dir):
-                os.rmdir(temp_dir)
-
             counts = {}
             for d in detections:
                 class_id = d["class"]
@@ -99,7 +71,6 @@ class ObjectDetector:
             raise
 
         finally:
-            # Clean up temporary file
             try:
                 if os.path.exists(temp_path):
                     os.remove(temp_path)
@@ -109,29 +80,22 @@ class ObjectDetector:
                 print(f"Error cleaning up temporary files: {str(e)}")
 
     def detect_and_draw(self, image_bytes):
-        """Detect objects and draw bounding boxes on the image."""
         try:
-            # Create temp directory if it doesn't exist
             temp_dir = "temp"
             if not os.path.exists(temp_dir):
                 os.makedirs(temp_dir)
 
-            # Save temporary image for YOLO prediction
             temp_path = os.path.join(temp_dir, "temp_image.jpg")
 
-            # Convert bytes to file
             with open(temp_path, "wb") as f:
                 f.write(image_bytes)
 
-            # Run inference and get results with boxes drawn
             results = self.model.predict(
                 source=temp_path, save=False, device=self.device
             )
 
-            # Get the plotted image with boxes
             for r in results:
                 plotted_img = r.plot()
-                # Convert to bytes
                 is_success, buffer = cv2.imencode(".jpg", plotted_img)
                 if is_success:
                     return buffer.tobytes()
@@ -143,7 +107,6 @@ class ObjectDetector:
             raise
 
         finally:
-            # Clean up temporary file
             try:
                 if os.path.exists(temp_path):
                     os.remove(temp_path)
