@@ -17,7 +17,7 @@ class DetectionResult:
 class ObjectDetector:
     def __init__(self, model_path=None):
         if model_path is None:
-            model_path = "C:/Users/BERKAY/Desktop/runs/detect/bitirme_yolo_model3/weights/best.pt"
+            model_path = "C:/Users/Monster/Desktop/Grad_proj_v3/Grad_Project/best.pt"
 
         print(f"Loading YOLO model from: {model_path}")
         self.model = YOLO(model_path)
@@ -31,7 +31,7 @@ class ObjectDetector:
                 os.makedirs(temp_dir)
 
             temp_path = os.path.join(temp_dir, "temp_image.jpg")
-            
+
             image = cv2.imdecode(np.frombuffer(image_bytes, np.uint8), cv2.IMREAD_COLOR)
             cv2.imwrite(temp_path, image)
 
@@ -44,9 +44,7 @@ class ObjectDetector:
                 for box in r.boxes:
                     class_id = int(box.cls[0])
                     coordinates = box.xywh[0].tolist()
-                    confidence = (
-                        float(box.conf[0]) if box.conf is not None else 0.0
-                    )
+                    confidence = float(box.conf[0]) if box.conf is not None else 0.0
 
                     detections.append(
                         {
