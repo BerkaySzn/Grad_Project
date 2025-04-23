@@ -83,7 +83,7 @@ body {
     width: 100%;
     margin: 0;
     padding: 0;
-    background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("{{ url_for('static', filename='images/background.jpg') }}");
+    background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url("{{ url_for('static', filename='images/background.jpg') }}");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -92,7 +92,7 @@ body {
 }
 
 .main-container::before {
-    display: none; /* Removing the white overlay since we're using gradient */
+    display: none;
 }
 
 .container {
@@ -120,10 +120,10 @@ body {
     border-radius: 10px;
     padding: 2rem;
     text-align: center;
-    background-color: rgba(255, 255, 255, 0.95);
+    background-color: rgba(255, 255, 255, 0.9);
     cursor: pointer;
     transition: all 0.3s ease;
-    backdrop-filter: blur(5px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .upload-area:hover {
