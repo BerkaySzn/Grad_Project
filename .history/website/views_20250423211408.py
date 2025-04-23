@@ -34,30 +34,30 @@ detector = ObjectDetector()
 
 # Map YOLO class IDs to ingredient names
 INGREDIENT_MAP = {
-
-    0: 'banana',
-    1: 'apple',
-    2: 'orange',
-    3: 'carrot',
-    4: 'lemon',
-    5: 'potato',
-    6: 'onion',
-    7: 'garlicc',
-    8: 'bell-pepperr',
-    9: 'tomato',
-    10: 'lettuce',
-    11: 'spinach',
-    12: 'corn',
-    13: 'eggplant',
-    14: 'cauliflower',
-    15: 'cabbage',
-    16: 'cucamber',
-    17: 'broccoli',
-    18: 'pepper',
-    19: 'pumpkin',
-    20: 'green-bean',
-    21: 'peas',
-
+    {
+        0: 'banana',
+        1: 'apple',
+        2: 'orange',
+        3: 'carrot',
+        4: 'lemon',
+        5: 'potato',
+        6: 'onion',
+        7: 'garlicc',
+        8: 'bell-pepperr',
+        9: 'tomato',
+        10: 'lettuce',
+        11: 'spinach',
+        12: 'corn',
+        13: 'eggplant',
+        14: 'cauliflower',
+        15: 'cabbage',
+        16: 'cucamber',
+        17: 'broccoli',
+        18: 'pepper',
+        19: 'pumpkin',
+        20: 'green-bean',
+        21: 'peas',
+    }
 
 }
 
