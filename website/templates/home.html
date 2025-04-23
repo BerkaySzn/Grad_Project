@@ -243,7 +243,6 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
             div.innerHTML = `
                 <i class="bi bi-check2-circle text-success me-2"></i>
                 ${ingredient.name}
-                <span class="ms-2 text-muted">${(ingredient.confidence * 100).toFixed(0)}%</span>
             `;
             ingredientList.appendChild(div);
         });

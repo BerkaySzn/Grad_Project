@@ -44,7 +44,7 @@ INGREDIENT_MAP = {
     9: "tomato",
 }
 
-
+    
 @views.route("/", methods=["GET"])
 def home():
     return render_template("home.html", user=current_user)
@@ -68,13 +68,9 @@ def upload_image():
             detections, counts = detector.detect_ingredients(image_bytes)
 
             detected_ingredients = []
-            confidence_scores = []  # Model doğruluk yüzdesini hesaplamak için liste
 
             for d in detections:
                 class_id = d["class"]
-                confidence = d["confidence"]
-                confidence_scores.append(confidence)
-
                 if class_id in INGREDIENT_MAP:
                     detected_ingredients.append(
                         {"name": INGREDIENT_MAP[class_id], "count": counts[class_id]}
@@ -100,22 +96,11 @@ def upload_image():
                 else:
                     formatted_ingredients.append({"name": name})
 
-            # Model doğruluğunu hesapla
-            if confidence_scores:
-                avg_confidence = round(
-                    sum(confidence_scores) / len(confidence_scores) * 100, 2
-                )
-            else:
-                avg_confidence = 0.0  # Eğer hiç confidence alınmadıysa %0 olarak göster
-
             session["detected_ingredients"] = formatted_ingredients
-            print("Confidence Scores:", confidence_scores)
-            print("Average Confidence:", avg_confidence)
             return jsonify(
                 {
                     "success": True,
-                    "ingredients": formatted_ingredients,
-                    "accuracy": f"{avg_confidence}%",
+                    "ingredients": formatted_ingredients
                 }
             )
 
