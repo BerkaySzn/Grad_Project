@@ -219,9 +219,9 @@ def remove_favorite_route(recipe_id):
     return redirect(url_for("views.favorites"))
 
 
-@views.route("/recipes", methods=["GET"])
+@views.route("/results", methods=["GET"])
 @login_required
-def recipes():
+def results():
     detected_ingredients = session.get("detected_ingredients", [])
 
     if not detected_ingredients:
@@ -251,7 +251,7 @@ def recipes():
         ~Recipe.recipe_id.in_(favorite_ids),
         Recipe.recipe_ingredients.any(
             RecipeIngredient.ingr_id.in_(ingredient_ids))
-    ).order_by(Recipe.ranking.desc()).all()
+    ).order_by(Recipe.ranking.desc().nullslast()).all()
 
     # Sonuçları birleştir
     all_recipes = favorite_recipes + non_favorite_recipes

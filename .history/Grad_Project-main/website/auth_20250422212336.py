@@ -7,7 +7,6 @@ from datetime import datetime
 
 auth = Blueprint('auth', __name__)
 
-
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -27,13 +26,11 @@ def login():
 
     return render_template("login.html", user=current_user)
 
-
 @auth.route('/logout')
 @login_required
 def logout():
     logout_user()
     return redirect(url_for('auth.login'))
-
 
 @auth.route('/sign-up', methods=['GET', 'POST'])
 def sign_up():
@@ -58,8 +55,7 @@ def sign_up():
             new_user = User(
                 email=email,
                 first_name=first_name,
-                password=generate_password_hash(
-                    password1, method='pbkdf2:sha256'),
+                password=generate_password_hash(password1, method='pbkdf2:sha256'),
                 created_at=datetime.utcnow()
             )
             db.session.add(new_user)

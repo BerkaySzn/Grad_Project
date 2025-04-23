@@ -219,52 +219,42 @@ def remove_favorite_route(recipe_id):
     return redirect(url_for("views.favorites"))
 
 
-@views.route("/recipes", methods=["GET"])
+@views.route("/results", methods=["POST"])
 @login_required
-def recipes():
-    detected_ingredients = session.get("detected_ingredients", [])
+def results():
+    detected_ingredient_ids = request.form.getlist(
+        "ingredient_ids[]", type=int)
 
-    if not detected_ingredients:
-        flash("No ingredients detected. Please upload an image first.", "error")
-        return redirect(url_for("views.home"))
-
-    # Clean ingredient names (remove ' x1' etc.)
-    cleaned_names = [i["name"].split(" x")[0]
-                     for i in detected_ingredients if "name" in i]
-
-    # Get ingredient IDs from names
-    ingredient_objs = Ingredient.query.filter(
-        Ingredient.ingr_name.in_(cleaned_names)).all()
-    ingredient_ids = [i.ingr_id for i in ingredient_objs]
-
-    # 1. Favoriler içinde eşleşen tarifler
+    # Favori tariflerden, eşleşen malzemelere sahip olanlar
     favorite_recipes = db.session.query(Recipe).join(Favorite).filter(
         Favorite.user_id == current_user.user_id,
         Recipe.recipe_ingredients.any(
-            RecipeIngredient.ingr_id.in_(ingredient_ids))
+            RecipeIngredient.ingr_id.in_(detected_ingredient_ids))
     ).all()
 
-    # 2. Favori olmayan ama eşleşen tarifler (ranking'e göre)
-    favorite_ids = [r.recipe_id for r in favorite_recipes]
-
+    # Favori olmayan tarifler ama malzeme eşleşmesi olanlar
     non_favorite_recipes = db.session.query(Recipe).filter(
-        ~Recipe.recipe_id.in_(favorite_ids),
+        ~Recipe.recipe_id.in_([r.recipe_id for r in favorite_recipes]),
         Recipe.recipe_ingredients.any(
-            RecipeIngredient.ingr_id.in_(ingredient_ids))
+            RecipeIngredient.ingr_id.in_(detected_ingredient_ids))
     ).order_by(Recipe.ranking.desc()).all()
 
-    # Sonuçları birleştir
-    all_recipes = favorite_recipes + non_favorite_recipes
+    # Hepsini birleştir
+    combined_recipes = favorite_recipes + non_favorite_recipes
 
-    # Detayları zenginleştir
+    # Detaylı hale getirmek istersen:
     recipes_with_details = [get_recipe_with_details(
-        r.recipe_id) for r in all_recipes]
+        r.recipe_id) for r in combined_recipes]
+
+    # Ingredient isimleri de görünsün
+    ingredients = Ingredient.query.filter(
+        Ingredient.ingr_id.in_(detected_ingredient_ids)).all()
 
     return render_template(
-        "recipe_results.html",
-        user=current_user,
+        "results.html",
         recipes=recipes_with_details,
-        ingredients=ingredient_objs
+        ingredients=ingredients,
+        user=current_user
     )
 
 
