@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}My Favorites - Recipe Finder{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-body">
+                <h2 class="card-title mb-4">My Favorite Recipes</h2>
+                
+                {% if recipes %}
+                <div class="row">
+                    {% for recipe in recipes %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100 shadow-sm">
+                            <div class="row g-0">
+                                <div class="col-md-4">
+                                    {% if recipe.photo %}
+                                    <img src="{{ recipe.photo }}" class="img-fluid rounded-start h-100" style="object-fit: cover;" alt="{{ recipe.name }}">
+                                    {% else %}
+                                    <div class="bg-light h-100 d-flex align-items-center justify-content-center">
+                                        <i class="bi bi-image text-muted" style="font-size: 2rem;"></i>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ recipe.name }}</h5>
+                                        <div class="recipe-meta small text-muted mb-2">
+                                            <div><i class="bi bi-clock"></i> {{ recipe.time }} mins</div>
+                                            <div><i class="bi bi-people"></i> {{ recipe.servings }} servings</div>
+                                            <div><i class="bi bi-fire"></i> {{ recipe.calories }} calories</div>
+                                            {% if recipe.ranking %}
+                                            <div><i class="bi bi-star-fill text-warning"></i> {{ "%.1f"|format(recipe.ranking) }}/5</div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="d-flex justify-content-between align-items-center mt-3">
+                                            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#recipeModal{{ recipe.id }}">
+                                                <i class="bi bi-info-circle"></i> Details
+                                            </button>
+                                            <form action="{{ url_for('views.remove_favorite_route', recipe_id=recipe.id) }}" method="post" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    <i class="bi bi-trash"></i> Remove
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recipe Details Modal -->
+                    <div class="modal fade" id="recipeModal{{ recipe.id }}" tabindex="-1" aria-labelledby="recipeModalLabel{{ recipe.id }}" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="recipeModalLabel{{ recipe.id }}">{{ recipe.name }}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            {% if recipe.photo %}
+                                            <img src="{{ recipe.photo }}" class="img-fluid rounded mb-3" alt="{{ recipe.name }}">
+                                            {% else %}
+                                            <div class="bg-light p-3 text-center mb-3" style="height: 300px;">
+                                                <i class="bi bi-image text-muted display-1 mt-5"></i>
+                                            </div>
+                                            {% endif %}
+                                            <div class="recipe-meta mb-3">
+                                                <p><i class="bi bi-clock"></i> Total Time: {{ recipe.time }} mins</p>
+                                                <p><i class="bi bi-people"></i> Servings: {{ recipe.servings }}</p>
+                                                <p><i class="bi bi-fire"></i> Calories: {{ recipe.calories }} kcal</p>
+                                                {% if recipe.ranking %}
+                                                <p><i class="bi bi-star-fill text-warning"></i> Rating: {{ "%.1f"|format(recipe.ranking) }}/5</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6 class="mb-3">Ingredients:</h6>
+                                            <ul class="list-unstyled">
+                                                {% for ingredient in recipe.ingredients %}
+                                                <li class="mb-2">
+                                                    <i class="bi bi-check2-circle text-success"></i>
+                                                    {% if ingredient.quantity %}{{ ingredient.quantity }}{% endif %}
+                                                    {% if ingredient.unit %}{{ ingredient.unit }}{% endif %}
+                                                    {{ ingredient.name }}
+                                                </li>
+                                                {% endfor %}
+                                            </ul>
+                                            
+                                            <h6 class="mt-4 mb-3">Instructions:</h6>
+                                            <ol class="list-group list-group-numbered">
+                                                {% for instruction in recipe.instructions %}
+                                                <li class="list-group-item">{{ instruction.text }}</li>
+                                                {% endfor %}
+                                            </ol>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-heart text-muted" style="font-size: 3rem;"></i>
+                    <p class="lead mt-3 mb-4">You don't have any favorite recipes yet.</p>
+                    <a href="/" class="btn btn-primary btn-lg">
+                        <i class="bi bi-search"></i> Find Recipes
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
