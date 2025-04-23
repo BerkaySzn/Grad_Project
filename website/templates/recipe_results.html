@@ -26,9 +26,16 @@
                             <span><i class="bi bi-people"></i> servings</span>
                             <span><i class="bi bi-fire"></i> {{ recipe.calories }} calories</span>
                         </div>
-                        <button class="btn btn-success mt-3" onclick="showRecipeDetails({{ recipe.recipe_id }})">
-                            <i class="bi bi-info-circle me-2"></i>See Details
-                        </button>
+                        <div class="d-flex gap-2 mt-3">
+                            <button class="btn btn-success flex-grow-1" onclick="showRecipeDetails({{ recipe.recipe_id }})">
+                                <i class="bi bi-info-circle me-2"></i>See Details
+                            </button>
+                            <form action="{{ url_for('views.add_favorite_route', recipe_id=recipe.recipe_id) }}" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-outline-primary">
+                                    <i class="bi bi-heart"></i>
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -123,6 +130,19 @@ p {
 .btn-success:hover {
     background-color: #FF6B00 !important;
     border-color: #FF6B00 !important;
+    transform: translateY(-2px);
+}
+
+.btn-outline-primary {
+    color: #FF8C00 !important;
+    border-color: #FF8C00 !important;
+    padding: 8px 20px;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-primary:hover {
+    background-color: #FF8C00 !important;
+    color: white !important;
     transform: translateY(-2px);
 }
 
