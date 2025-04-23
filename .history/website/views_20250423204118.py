@@ -1,5 +1,3 @@
-from sqlalchemy import text
-from flask import request, jsonify, session
 from flask import (
     Blueprint,
     render_template,
@@ -46,10 +44,13 @@ INGREDIENT_MAP = {
     9: "tomato",
 }
 
-
+    
 @views.route("/", methods=["GET"])
 def home():
     return render_template("home.html", user=current_user)
+
+
+from flask import request, jsonify, session
 
 
 @views.route("/upload-image", methods=["POST"])
@@ -72,8 +73,7 @@ def upload_image():
                 class_id = d["class"]
                 if class_id in INGREDIENT_MAP:
                     detected_ingredients.append(
-                        {"name": INGREDIENT_MAP[class_id],
-                            "count": counts[class_id]}
+                        {"name": INGREDIENT_MAP[class_id], "count": counts[class_id]}
                     )
 
             if not detected_ingredients:
@@ -111,6 +111,9 @@ def upload_image():
     return jsonify({"error": "Invalid image file"}), 400
 
 
+from sqlalchemy import text
+
+
 def find_recipes_by_ingredients(ingredients):
     """Find recipes based on detected ingredients."""
     try:
@@ -128,9 +131,8 @@ def find_recipes_by_ingredients(ingredients):
         print(f"Searching for recipes with ingredients: {cleaned_ingredients}")
 
         # Convert list of ingredients to comma-separated string of quoted names
-        ingredient_names = ", ".join(
-            f"'{ingredient}'" for ingredient in cleaned_ingredients)
-
+        ingredient_names = ", ".join(f"'{ingredient}'" for ingredient in cleaned_ingredients)
+        
         query = f"""
         WITH UserIngredients AS (
             SELECT ingr_id 
@@ -203,7 +205,6 @@ def remove_favorite_route(recipe_id):
 
     return redirect(url_for("views.favorites"))
 
-
 @views.route("/recipes", methods=["GET"])
 @login_required
 def recipes():
@@ -243,8 +244,7 @@ def recipes():
 
     # Detayları zenginleştir
     recipes_with_details = [get_recipe_with_details(
-        r.recipe_id, current_user.user_id) for r in all_recipes]
-
+        r.recipe_id) for r in all_recipes]
 
     return render_template(
         "recipe_results.html",
@@ -252,7 +252,6 @@ def recipes():
         recipes=recipes_with_details,
         ingredients=ingredient_objs
     )
-
 
 @views.route("/all-ingredients")
 def all_ingredients():
@@ -285,15 +284,19 @@ def add_ingredient():
 @views.route("/get-recipe-details/<int:recipe_id>", methods=["GET"])
 def get_recipe_details_route(recipe_id):
     try:
-        user_id = current_user.user_id if current_user.is_authenticated else None
-        recipe = get_recipe_with_details(recipe_id, user_id)
-
+        recipe = get_recipe_with_details(recipe_id)
         if recipe:
             return jsonify({
-                'ingredients': recipe['ingredients'],
-                'instructions': recipe['instructions'],
-                'ranking': recipe.get('ranking'),
-                'is_favorite': recipe.get('is_favorite')
+                'ingredients': [
+                    {
+                        'name': ingredient['name'],
+                        'quantity': ingredient['quantity'],
+                        'unit': ingredient['unit']
+                    } for ingredient in recipe['ingredients']
+                ],
+                'instructions': [
+                    {'text': instruction['text']} for instruction in recipe['instructions']
+                ]
             })
         else:
             return jsonify({'error': 'Recipe not found'}), 404

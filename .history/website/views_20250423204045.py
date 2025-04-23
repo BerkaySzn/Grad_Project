@@ -243,8 +243,7 @@ def recipes():
 
     # Detayları zenginleştir
     recipes_with_details = [get_recipe_with_details(
-        r.recipe_id, current_user.user_id) for r in all_recipes]
-
+        r.recipe_id) for r in all_recipes]
 
     return render_template(
         "recipe_results.html",
@@ -282,21 +281,42 @@ def add_ingredient():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@views.route("/get-recipe-details/<int:recipe_id>", methods=["GET"])
-def get_recipe_details_route(recipe_id):
-    try:
-        user_id = current_user.user_id if current_user.is_authenticated else None
-        recipe = get_recipe_with_details(recipe_id, user_id)
+def get_recipe_with_details(recipe_id, user_id=None):
+    recipe = Recipe.query.get(recipe_id)
+    if not recipe:
+        return None
 
-        if recipe:
-            return jsonify({
-                'ingredients': recipe['ingredients'],
-                'instructions': recipe['instructions'],
-                'ranking': recipe.get('ranking'),
-                'is_favorite': recipe.get('is_favorite')
-            })
-        else:
-            return jsonify({'error': 'Recipe not found'}), 404
-    except Exception as e:
-        print(f"Error getting recipe details: {e}")
-        return jsonify({'error': 'Internal server error'}), 500
+    ingredients = [
+        {
+            "name": ri.ingredient.ingr_name,
+            "quantity": ri.quantity,
+            "unit": ri.unit
+        }
+        for ri in recipe.recipe_ingredients
+    ]
+
+    instructions = [
+        {
+            "step": d.step_number,
+            "text": d.instruction_text
+        }
+        for d in sorted(recipe.recipe_details, key=lambda x: x.step_number)
+    ]
+
+    is_favorite = False
+    if user_id:
+        is_favorite = db.session.query(Favorite).filter_by(
+            user_id=user_id,
+            recipe_id=recipe_id
+        ).first() is not None
+
+    return {
+        "recipe_id": recipe.recipe_id,
+        "name": recipe.name,
+        "time": recipe.time,
+        "calories": recipe.calories,
+        "ranking": recipe.ranking,
+        "ingredients": ingredients,
+        "instructions": instructions,
+        "is_favorite": is_favorite
+    }

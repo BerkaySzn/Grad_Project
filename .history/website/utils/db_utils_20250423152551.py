@@ -53,20 +53,12 @@ def remove_favorite(user_id, recipe_id):
         return True
     return False
 
-def get_recipe_with_details(recipe_id, user_id=None):
+def get_recipe_with_details(recipe_id):
     """Get a recipe with all its details, ingredients, and instructions."""
     recipe = Recipe.query.filter_by(recipe_id=recipe_id).first()
     if recipe:
         details = get_recipe_details(recipe_id)
         ingredients = get_recipe_ingredients(recipe_id)
-
-        # Favori kontrolü
-        is_favorite = False
-        if user_id:
-            is_favorite = db.session.query(Favorite).filter_by(
-                user_id=user_id, recipe_id=recipe_id
-            ).first() is not None
-
         return {
             'recipe_id': recipe.recipe_id,
             'id': recipe.recipe_id,
@@ -76,7 +68,6 @@ def get_recipe_with_details(recipe_id, user_id=None):
             'servings': recipe.servings,
             'calories': recipe.calories,
             'ranking': recipe.ranking,
-            'is_favorite': is_favorite,
             'ingredients': [
                 {
                     'name': ingredient[0],
@@ -91,4 +82,4 @@ def get_recipe_with_details(recipe_id, user_id=None):
                 } for detail in details
             ]
         }
-    return None
+    return None 

@@ -243,8 +243,7 @@ def recipes():
 
     # Detayları zenginleştir
     recipes_with_details = [get_recipe_with_details(
-        r.recipe_id, current_user.user_id) for r in all_recipes]
-
+        r.recipe_id) for r in all_recipes]
 
     return render_template(
         "recipe_results.html",

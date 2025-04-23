@@ -243,8 +243,7 @@ def recipes():
 
     # Detayları zenginleştir
     recipes_with_details = [get_recipe_with_details(
-        r.recipe_id, current_user.user_id) for r in all_recipes]
-
+        r.recipe_id) for r in all_recipes]
 
     return render_template(
         "recipe_results.html",
@@ -287,11 +286,18 @@ def get_recipe_details_route(recipe_id):
     try:
         user_id = current_user.user_id if current_user.is_authenticated else None
         recipe = get_recipe_with_details(recipe_id, user_id)
-
         if recipe:
             return jsonify({
-                'ingredients': recipe['ingredients'],
-                'instructions': recipe['instructions'],
+                'ingredients': [
+                    {
+                        'name': ingredient['name'],
+                        'quantity': ingredient['quantity'],
+                        'unit': ingredient['unit']
+                    } for ingredient in recipe['ingredients']
+                ],
+                'instructions': [
+                    {'text': instruction['text']} for instruction in recipe['instructions']
+                ],
                 'ranking': recipe.get('ranking'),
                 'is_favorite': recipe.get('is_favorite')
             })
