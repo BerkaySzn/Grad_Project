@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="95" fill="#f8f9fa" stroke="#4a6fdc" stroke-width="5"/>
+  <g transform="translate(50, 50)">
+    <!-- Fork -->
+    <path d="M30,0 L30,60 M20,10 L40,10 M25,60 C25,70 35,70 35,60" fill="none" stroke="#4a6fdc" stroke-width="6" stroke-linecap="round"/>
+    <!-- Plate -->
+    <ellipse cx="50" cy="80" rx="45" ry="15" fill="none" stroke="#4a6fdc" stroke-width="6"/>
+    <!-- Food -->
+    <circle cx="40" cy="70" r="8" fill="#4a6fdc"/>
+    <circle cx="60" cy="75" r="6" fill="#4a6fdc"/>
+    <circle cx="50" cy="65" r="7" fill="#4a6fdc"/>
+  </g>
+  <text x="100" y="170" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="#4a6fdc">RECIPE FINDER</text>
+</svg> 

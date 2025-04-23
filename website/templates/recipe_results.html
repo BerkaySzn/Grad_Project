@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Recipe Results{% endblock %}
+
+{% block content %}
+<div class="main-container">
+    <div class="container py-5">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="text-center mb-4">Recipe Suggestions</h1>
+                <p class="text-center mb-4">Based on the ingredients we identified, here are some recipes you might like:</p>
+            </div>
+        </div>
+
+        <div class="row">
+            {% for recipe in recipes %}
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 recipe-card">
+                    <div class="card-body">
+                        <div class="recipe-image-placeholder">
+                            <div class="no-photo">No photo available</div>
+                        </div>
+                        <h2 class="card-title mt-3">{{ recipe.name }}</h2>
+                        <div class="recipe-meta">
+                            <span><i class="bi bi-clock"></i> {{ recipe.time }} mins</span>
+                            <span><i class="bi bi-people"></i> servings</span>
+                            <span><i class="bi bi-fire"></i> {{ recipe.calories }} calories</span>
+                        </div>
+                        <button class="btn btn-success mt-3" onclick="showRecipeDetails({{ recipe.recipe_id }})">
+                            <i class="bi bi-info-circle me-2"></i>See Details
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Recipe Details Modal -->
+<div class="modal fade" id="recipeDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Recipe Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="recipeDetails">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.main-container {
+    min-height: 100vh;
+    width: 100%;
+    background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url("{{ url_for('static', filename='images/background.jpg') }}");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    padding: 40px 0;
+}
+
+h1 {
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+p {
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.recipe-card {
+    background-color: rgba(255, 255, 255, 0.95);
+    border: none;
+    border-radius: 15px;
+    transition: transform 0.3s ease;
+}
+
+.recipe-card:hover {
+    transform: translateY(-5px);
+}
+
+.recipe-image-placeholder {
+    height: 200px;
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.no-photo {
+    color: #6c757d;
+}
+
+.recipe-meta {
+    display: flex;
+    gap: 15px;
+    color: #6c757d;
+    margin: 10px 0;
+}
+
+.recipe-meta span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-success {
+    background-color: #FF8C00 !important;
+    border-color: #FF8C00 !important;
+    padding: 8px 20px;
+    transition: all 0.3s ease;
+}
+
+.btn-success:hover {
+    background-color: #FF6B00 !important;
+    border-color: #FF6B00 !important;
+    transform: translateY(-2px);
+}
+
+.modal-header {
+    background-color: #FF8C00;
+    color: white;
+}
+
+.modal-content {
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.btn-close {
+    filter: brightness(0) invert(1);
+}
+
+.card-title {
+    color: #FF8C00;
+    font-weight: bold;
+}
+</style>
+
+<script>
+function showRecipeDetails(recipeId) {
+    fetch(`/get-recipe-details/${recipeId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
+
+            let detailsHtml = '<div class="recipe-details">';
+            
+            // Ingredients Section
+            detailsHtml += '<h4 class="mb-3">Ingredients:</h4><ul class="list-group mb-4">';
+            data.ingredients.forEach(ingredient => {
+                detailsHtml += `
+                    <li class="list-group-item">
+                        ${ingredient.name} - ${ingredient.quantity} ${ingredient.unit}
+                    </li>`;
+            });
+            detailsHtml += '</ul>';
+
+            // Instructions Section
+            detailsHtml += '<h4 class="mb-3">Instructions:</h4><ol class="list-group list-group-numbered mb-3">';
+            data.instructions.forEach(instruction => {
+                detailsHtml += `
+                    <li class="list-group-item">
+                        ${instruction.text}
+                    </li>`;
+            });
+            detailsHtml += '</ol></div>';
+
+            document.getElementById('recipeDetails').innerHTML = detailsHtml;
+            new bootstrap.Modal(document.getElementById('recipeDetailsModal')).show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error loading recipe details. Please try again.');
+        });
+}
+</script>
+{% endblock %} 
