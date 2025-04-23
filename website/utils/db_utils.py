@@ -60,6 +60,7 @@ def get_recipe_with_details(recipe_id):
         details = get_recipe_details(recipe_id)
         ingredients = get_recipe_ingredients(recipe_id)
         return {
+            'recipe_id': recipe.recipe.id,
             'id': recipe.recipe_id,
             'name': recipe.name,
             'photo': recipe.photo,
