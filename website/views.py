@@ -229,7 +229,7 @@ def recipes():
 @views.route("/all-ingredients")
 def all_ingredients():
     ingredients = session.get("detected_ingredients", [])
-    return render_template("all_ingredients.html", ingredients=ingredients)
+    return render_template("all_ingredients.html", user=current_user, ingredients=ingredients)
 
 
 @views.route("/add-ingredient", methods=["POST"])
