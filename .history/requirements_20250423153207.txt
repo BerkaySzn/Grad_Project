@@ -4,6 +4,6 @@ flask-login==0.6.3
 pyodbc==5.2.0
 pillow==11.1.0
 torch==2.2.0
-ultralytics>=8.0.0  # for YOLOv8
+ultralytics==8.0.0  # for YOLOv8
 numpy>=1.26.0
 opencv-python==4.6.0.66 

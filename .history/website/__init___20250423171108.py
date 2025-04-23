@@ -13,7 +13,7 @@ def create_app():
 
     # Database configuration
     app.config["SQLALCHEMY_DATABASE_URI"] = (
-        "mysql+pymysql://root:Bitirme.proj.24@localhost/Grad_Project_DB"
+        "es"
     )
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["SQLALCHEMY_ECHO"] = True  # For debugging SQL queries

@@ -17,7 +17,7 @@ class DetectionResult:
 class ObjectDetector:
     def __init__(self, model_path=None):
         if model_path is None:
-            model_path = r"C:\Users\aycaa\runs\detect\bitirme_yolo_model23\weights\best.pt"
+            model_path = "C:\\Users\\BERKAY\\Desktop\\best_v3-1.pt"
 
         print(f"Loading YOLO model from: {model_path}")
         self.model = YOLO(model_path)
