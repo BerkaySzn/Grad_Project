@@ -11,14 +11,14 @@ def create_app():
     app = Flask(__name__)
     app.config["SECRET_KEY"] = "your_secret_key_here"
 
-    # Database configuration
+    # MSSQL için Windows Authentication bağlantı
     app.config["SQLALCHEMY_DATABASE_URI"] = (
-        "mysql+pymysql://root:Bitirme.proj.24@localhost/Grad_Project_DB"
+        "mssql+pyodbc://@MELISA\\SQLSERVER/Grad_Project_DB?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
     )
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    app.config["SQLALCHEMY_ECHO"] = True  # For debugging SQL queries
 
-    # Initialize database
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config["SQLALCHEMY_ECHO"] = True
+
     db.init_app(app)
 
     from .views import views

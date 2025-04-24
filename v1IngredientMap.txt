@@ -1,0 +1,12 @@
+INGREDIENT_MAP = {
+    0: "aubergine",
+    1: "cabbage",
+    2: "carrot",
+    3: "cauliflower",
+    4: "garlic",
+    5: "green-pepper",
+    6: "onion",
+    7: "patato",
+    8: "spinach",
+    9: "tomato",
+}
