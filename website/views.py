@@ -42,7 +42,7 @@ INGREDIENT_MAP = {
     4: 'lemon',
     5: 'potato',
     6: 'onion',
-    7: 'garlicc',
+    7: 'garlic',
     8: 'bell-pepperr',
     9: 'tomato',
     10: 'lettuce',
@@ -106,10 +106,7 @@ def upload_image():
                     ingredient_counts[name] = count
 
             for name, count in ingredient_counts.items():
-                if count > 1:
-                    formatted_ingredients.append({"name": f"{name} x{count}"})
-                else:
-                    formatted_ingredients.append({"name": name})
+                formatted_ingredients.append({"name": name})
 
             session["detected_ingredients"] = formatted_ingredients
             return jsonify(
