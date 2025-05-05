@@ -1,5 +1,6 @@
 from .. import db
-from ..models import Recipe, Favorite, RecipeDetail, RecipeIngredient, Ingredient
+from ..models import Recipe, Favorite, RecipeDetail, RecipeIngredient, Ingredient, RecipeRating
+from sqlalchemy import func
 
 
 def get_recipe_by_id(recipe_id):
@@ -77,6 +78,17 @@ def get_recipe_with_details(recipe_id, user_id=None):
                 user_id=user_id, recipe_id=recipe_id
             ).first() is not None
 
+        # Average rating
+        avg_rating = db.session.query(func.avg(RecipeRating.rating)).filter_by(recipe_id=recipe_id).scalar()
+        avg_rating = round(avg_rating, 1) if avg_rating else None
+
+        # User's own rating
+        user_rating = None
+        if user_id:
+            user_rating_obj = RecipeRating.query.filter_by(user_id=user_id, recipe_id=recipe_id).first()
+            if user_rating_obj:
+                user_rating = user_rating_obj.rating
+
         return {
             'recipe_id': recipe.recipe_id,
             'id': recipe.recipe_id,
@@ -87,6 +99,8 @@ def get_recipe_with_details(recipe_id, user_id=None):
             'calories': recipe.calories,
             'ranking': recipe.ranking,
             'is_favorite': is_favorite,
+            'average_rating': avg_rating,
+            'user_rating': user_rating,
             'ingredients': [
                 {
                     'name': ingredient[0],

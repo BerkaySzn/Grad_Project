@@ -12,7 +12,7 @@ from flask import (
     session,
 )
 from flask_login import login_required, current_user
-from .models import Recipe, Ingredient, Favorite, RecipeIngredient
+from .models import Recipe, Ingredient, Favorite, RecipeIngredient, RecipeRating
 from . import db
 from .utils.db_utils import (
     get_recipe_by_id,
@@ -28,6 +28,7 @@ from werkzeug.utils import secure_filename
 from PIL import Image
 import io
 from .utils.object_detection import ObjectDetector
+from sqlalchemy import func
 
 views = Blueprint("views", __name__)
 detector = ObjectDetector()
@@ -304,10 +305,29 @@ def get_recipe_details_route(recipe_id):
                 'ingredients': recipe['ingredients'],
                 'instructions': recipe['instructions'],
                 'ranking': recipe.get('ranking'),
-                'is_favorite': recipe.get('is_favorite')
+                'is_favorite': recipe.get('is_favorite'),
+                'average_rating': recipe.get('average_rating'),
+                'user_rating': recipe.get('user_rating')
             })
         else:
             return jsonify({'error': 'Recipe not found'}), 404
     except Exception as e:
         print(f"Error getting recipe details: {e}")
         return jsonify({'error': 'Internal server error'}), 500
+
+
+@views.route('/rate-recipe/<int:recipe_id>', methods=['POST'])
+@login_required
+def rate_recipe(recipe_id):
+    rating = int(request.form.get('rating'))
+    user_id = current_user.user_id
+
+    # Check if user already rated this recipe
+    existing = RecipeRating.query.filter_by(user_id=user_id, recipe_id=recipe_id).first()
+    if existing:
+        existing.rating = rating
+    else:
+        new_rating = RecipeRating(user_id=user_id, recipe_id=recipe_id, rating=rating)
+        db.session.add(new_rating)
+    db.session.commit()
+    return jsonify({'success': True})

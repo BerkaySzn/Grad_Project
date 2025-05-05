@@ -25,11 +25,15 @@
                             <span><i class="bi bi-clock"></i> {{ recipe.time }} mins</span>
                             <span><i class="bi bi-people"></i> servings</span>
                             <span><i class="bi bi-fire"></i> {{ recipe.calories }} calories</span>
-
-                            {% if recipe.ranking is defined and recipe.ranking %}
+                            {% if recipe.average_rating is defined and recipe.average_rating %}
                             <span class="ms-3">
-                                  <i class="bi bi-star-fill text-warning"></i>
-                                 {{ "%.1f"|format(recipe.ranking) }} / 5
+                                <i class="bi bi-star-fill text-warning"></i>
+                                {{ "%.1f"|format(recipe.average_rating) }} / 5
+                            </span>
+                            {% elif recipe.ranking is defined and recipe.ranking %}
+                            <span class="ms-3">
+                                <i class="bi bi-star text-warning"></i>
+                                {{ "%.1f"|format(recipe.ranking) }} / 5
                             </span>
                             {% endif %}
                         </div>
@@ -43,8 +47,6 @@
                                     {% if recipe.is_favorite %}Favorited{% else %}Add to Favorites{% endif %}
                                 </button>
                             </form>
-                            
-                            
                         </div>
                     </div>
                 </div>
@@ -65,6 +67,11 @@
             <div class="modal-body">
                 <div id="recipeDetails">
                     <!-- Content will be loaded dynamically -->
+                </div>
+                <div id="ratingSection" class="mt-4">
+                    <h5>Rate this recipe:</h5>
+                    <div id="starRating" class="mb-2"></div>
+                    <div id="averageRating" class="text-muted"></div>
                 </div>
             </div>
         </div>
@@ -174,10 +181,24 @@ p {
     color: #FF8C00;
     font-weight: bold;
 }
+
+.star {
+    font-size: 2rem;
+    color: #ccc;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.star.selected,
+.star.hovered {
+    color: #FF8C00;
+}
 </style>
 
 <script>
+let currentRecipeId = null;
+
 function showRecipeDetails(recipeId) {
+    currentRecipeId = recipeId;
     fetch(`/get-recipe-details/${recipeId}`)
         .then(response => response.json())
         .then(data => {
@@ -187,7 +208,6 @@ function showRecipeDetails(recipeId) {
             }
 
             let detailsHtml = '<div class="recipe-details">';
-            
             // Ingredients Section
             detailsHtml += '<h4 class="mb-3">Ingredients:</h4><ul class="list-group mb-4">';
             data.ingredients.forEach(ingredient => {
@@ -197,7 +217,6 @@ function showRecipeDetails(recipeId) {
                     </li>`;
             });
             detailsHtml += '</ul>';
-
             // Instructions Section
             detailsHtml += '<h4 class="mb-3">Instructions:</h4><ol class="list-group list-group-numbered mb-3">';
             data.instructions.forEach(instruction => {
@@ -207,14 +226,72 @@ function showRecipeDetails(recipeId) {
                     </li>`;
             });
             detailsHtml += '</ol></div>';
-
             document.getElementById('recipeDetails').innerHTML = detailsHtml;
+
+            // Render star rating
+            renderStarRating(data.user_rating, data.ranking, data.average_rating);
             new bootstrap.Modal(document.getElementById('recipeDetailsModal')).show();
         })
         .catch(error => {
             console.error('Error:', error);
             alert('Error loading recipe details. Please try again.');
         });
+}
+
+function renderStarRating(userRating, ranking, averageRating) {
+    const starContainer = document.getElementById('starRating');
+    const avgContainer = document.getElementById('averageRating');
+    starContainer.innerHTML = '';
+    let ratingToShow = (userRating !== null && userRating !== undefined) ? userRating : 0;
+    for (let i = 1; i <= 5; i++) {
+        const star = document.createElement('span');
+        star.classList.add('star');
+        if (i <= ratingToShow) star.classList.add('selected');
+        star.innerHTML = '&#9733;';
+        star.dataset.value = i;
+        star.onclick = function() { submitRating(i); };
+        star.onmouseover = function() { highlightStars(i); };
+        star.onmouseleave = function() { highlightStars(ratingToShow); };
+        starContainer.appendChild(star);
+    }
+    // Show average rating
+    if (averageRating !== null && averageRating !== undefined) {
+        avgContainer.innerHTML = `Average rating: <b>${averageRating} / 5</b>`;
+    } else if (ranking) {
+        avgContainer.innerHTML = `Initial ranking: <b>${ranking} / 5</b>`;
+    } else {
+        avgContainer.innerHTML = 'No ratings yet.';
+    }
+}
+
+function highlightStars(count) {
+    const stars = document.querySelectorAll('#starRating .star');
+    stars.forEach((star, idx) => {
+        if (idx < count) {
+            star.classList.add('hovered');
+        } else {
+            star.classList.remove('hovered');
+        }
+    });
+}
+
+function submitRating(rating) {
+    if (!currentRecipeId) return;
+    fetch(`/rate-recipe/${currentRecipeId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `rating=${rating}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Refresh details to update average and user rating
+            showRecipeDetails(currentRecipeId);
+        } else {
+            alert('Error submitting rating.');
+        }
+    })
+    .catch(() => alert('Error submitting rating.'));
 }
 </script>
 {% endblock %} 
