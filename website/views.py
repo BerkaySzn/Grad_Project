@@ -35,7 +35,6 @@ detector = ObjectDetector()
 
 # Map YOLO class IDs to ingredient names
 INGREDIENT_MAP = {
-
     0: 'banana',
     1: 'apple',
     2: 'orange',
@@ -58,10 +57,13 @@ INGREDIENT_MAP = {
     19: 'pumpkin',
     20: 'green-bean',
     21: 'peas',
-
-
 }
 
+UPLOAD_FOLDER = 'website/static/recipe_photos'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @views.route("/", methods=["GET"])
 def home():
@@ -307,7 +309,8 @@ def get_recipe_details_route(recipe_id):
                 'ranking': recipe.get('ranking'),
                 'is_favorite': recipe.get('is_favorite'),
                 'average_rating': recipe.get('average_rating'),
-                'user_rating': recipe.get('user_rating')
+                'user_rating': recipe.get('user_rating'),
+                'photo': recipe.get('photo')
             })
         else:
             return jsonify({'error': 'Recipe not found'}), 404
@@ -331,3 +334,42 @@ def rate_recipe(recipe_id):
         db.session.add(new_rating)
     db.session.commit()
     return jsonify({'success': True})
+
+
+@views.route('/upload-recipe-photo/<int:recipe_id>', methods=['POST'])
+@login_required
+def upload_recipe_photo(recipe_id):
+    if 'photo' not in request.files:
+        return jsonify({'error': 'No photo uploaded'}), 400
+    
+    file = request.files['photo']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+    
+    if file and allowed_file(file.filename):
+        try:
+            # Create upload folder if it doesn't exist
+            if not os.path.exists(UPLOAD_FOLDER):
+                os.makedirs(UPLOAD_FOLDER)
+            
+            # Secure the filename and create a unique name
+            filename = secure_filename(file.filename)
+            unique_filename = f"{recipe_id}_{filename}"
+            file_path = os.path.join(UPLOAD_FOLDER, unique_filename)
+            
+            # Save the file
+            file.save(file_path)
+            
+            # Update recipe photo path in database
+            recipe = Recipe.query.get(recipe_id)
+            if recipe:
+                recipe.photo = f"/static/recipe_photos/{unique_filename}"
+                db.session.commit()
+                return jsonify({'success': True, 'photo_url': recipe.photo})
+            else:
+                return jsonify({'error': 'Recipe not found'}), 404
+                
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    
+    return jsonify({'error': 'Invalid file type'}), 400

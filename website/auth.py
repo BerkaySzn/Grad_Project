@@ -40,7 +40,6 @@ def sign_up():
     if request.method == "POST":
         email = request.form.get("email")
         first_name = request.form.get("firstName")
-        last_name = request.form.get("lastName")  # ← EKLENDİ
         password1 = request.form.get("password1")
         password2 = request.form.get("password2")
 
@@ -59,7 +58,6 @@ def sign_up():
             new_user = User(
                 email=email,
                 first_name=first_name,
-                last_name=last_name,  # ← EKLENDİ
                 password=generate_password_hash(password1, method="pbkdf2:sha256"),
                 created_at=datetime.utcnow(),
             )
