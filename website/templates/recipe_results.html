@@ -206,6 +206,12 @@ p {
 
 <script>
 let currentRecipeId = null;
+let recipeModal = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize modal once when the page loads
+    recipeModal = new bootstrap.Modal(document.getElementById('recipeDetailsModal'));
+});
 
 function showRecipeDetails(recipeId) {
     currentRecipeId = recipeId;
@@ -251,7 +257,13 @@ function showRecipeDetails(recipeId) {
 
             // Render star rating
             renderStarRating(data.user_rating, data.ranking, data.average_rating);
-            new bootstrap.Modal(document.getElementById('recipeDetailsModal')).show();
+            
+            // Show the modal using the stored instance
+            if (recipeModal) {
+                recipeModal.show();
+            } else {
+                console.error('Modal not initialized');
+            }
         })
         .catch(error => {
             console.error('Error:', error);

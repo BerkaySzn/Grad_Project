@@ -17,11 +17,16 @@ class DetectionResult:
 class ObjectDetector:
     def __init__(self, model_path=None):
         if model_path is None:
-            model_path = r".\bestv2.pt"
+            # Use a relative path to the model file
+            model_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "bestv2.pt")
+            # If the model doesn't exist at the default location, try the absolute path
+            if not os.path.exists(model_path):
+                model_path = r"C:\Users\BERKAY\Desktop\bestv2.pt"
 
         print(f"Loading YOLO model from: {model_path}")
         self.model = YOLO(model_path)
         self.device = "cpu"
+        self.confidence_threshold = 0.5  # Only accept detections with 50% or higher confidence
         print("YOLO model loaded successfully")
 
     def detect_ingredients(self, image_bytes):
@@ -32,11 +37,15 @@ class ObjectDetector:
 
             temp_path = os.path.join(temp_dir, "temp_image.jpg")
 
-            image = cv2.imdecode(np.frombuffer(image_bytes, np.uint8), cv2.IMREAD_COLOR)
+            image = cv2.imdecode(np.frombuffer(
+                image_bytes, np.uint8), cv2.IMREAD_COLOR)
             cv2.imwrite(temp_path, image)
 
             results = self.model.predict(
-                source=temp_path, save=False, device=self.device
+                source=temp_path, 
+                save=False, 
+                device=self.device,
+                conf=self.confidence_threshold  # Apply confidence threshold
             )
 
             detections = []
@@ -44,15 +53,18 @@ class ObjectDetector:
                 for box in r.boxes:
                     class_id = int(box.cls[0])
                     coordinates = box.xywh[0].tolist()
-                    confidence = float(box.conf[0]) if box.conf is not None else 0.0
+                    confidence = float(
+                        box.conf[0]) if box.conf is not None else 0.0
 
-                    detections.append(
-                        {
-                            "class": class_id,
-                            "confidence": confidence,
-                            "bbox": coordinates,
-                        }
-                    )
+                    # Only add detections that meet the confidence threshold
+                    if confidence >= self.confidence_threshold:
+                        detections.append(
+                            {
+                                "class": class_id,
+                                "confidence": confidence,
+                                "bbox": coordinates,
+                            }
+                        )
 
             counts = {}
             for d in detections:
