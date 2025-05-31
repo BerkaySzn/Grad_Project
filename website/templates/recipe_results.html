@@ -18,7 +18,7 @@
                 <div class="card h-100 recipe-card">
                     <div class="card-body">
                         {% if recipe.photo %}
-                        <img src="{{ recipe.photo }}" alt="{{ recipe.name }}" class="img-fluid rounded mb-3" style="max-height: 200px; width: 100%; object-fit: cover;">
+                        <img src="{{ url_for('static', filename='images/' + recipe.photo) }}" alt="{{ recipe.name }}" class="img-fluid rounded mb-3" style="max-height: 200px; width: 100%; object-fit: cover;">
                         {% else %}
                         <div class="recipe-image-placeholder">
                             <div class="no-photo">No photo available</div>
@@ -202,6 +202,14 @@ p {
 .star.hovered {
     color: #FF8C00;
 }
+@media (max-width: 576px) {
+    .recipe-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}
+
 </style>
 
 <script>
