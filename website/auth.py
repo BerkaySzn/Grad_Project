@@ -15,15 +15,15 @@ def login():
         password = request.form.get("password")
 
         user = User.query.filter_by(email=email).first()
-
         if user:
-            if user.password == password:
-                login_user(user)
+            if check_password_hash(user.password, password):
+                flash("Logged in successfully!", category="success")
+                login_user(user, remember=True)
                 return redirect(url_for("views.home"))
             else:
-                flash("Wrong password")
+                flash("Incorrect password, try again.", category="error")
         else:
-            flash("User not found")
+            flash("Email does not exist.", category="error")
 
     return render_template("login.html")
 

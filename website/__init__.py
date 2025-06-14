@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager
+from flask_login import LoginManager, current_user
 
 db = SQLAlchemy()
 DB_NAME = "Grad_Project_DB"
@@ -36,5 +36,9 @@ def create_app():
     def load_user(id):
         with app.app_context():  # Context hatası engellenir
             return User.query.get(int(id))
+
+    @app.context_processor
+    def inject_user():
+        return dict(user=current_user)
 
     return app
