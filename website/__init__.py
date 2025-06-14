@@ -1,7 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
-import os
 
 db = SQLAlchemy()
 DB_NAME = "Grad_Project_DB"
@@ -16,9 +15,8 @@ def create_app():
         "mssql+pyodbc://@MELISA\\SQLSERVER/Grad_Project_DB?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
     )
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    app.config["SQLALCHEMY_ECHO"] = True  # For debugging SQL queries
+    app.config["SQLALCHEMY_ECHO"] = True
 
-    # Initialize database
     db.init_app(app)
 
     from .views import views
@@ -27,6 +25,7 @@ def create_app():
     app.register_blueprint(views, url_prefix="/")
     app.register_blueprint(auth, url_prefix="/")
 
+    # Bu import EN SONDA kalsın
     from .models import User
 
     login_manager = LoginManager()
@@ -35,6 +34,7 @@ def create_app():
 
     @login_manager.user_loader
     def load_user(id):
-        return User.query.get(int(id))
+        with app.app_context():  # Context hatası engellenir
+            return User.query.get(int(id))
 
     return app

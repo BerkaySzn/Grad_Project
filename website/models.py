@@ -77,9 +77,13 @@ class Favorite(db.Model):
 
 
 class RecipeRating(db.Model):
-    __tablename__ = 'recipe_ratings'
+    __tablename__ = "recipe_ratings"
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('Users.user_id'), nullable=False)
-    recipe_id = db.Column(db.Integer, db.ForeignKey('Recipes.recipe_id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("Users.user_id"), nullable=False)
+    recipe_id = db.Column(
+        db.Integer, db.ForeignKey("Recipes.recipe_id"), nullable=False
+    )
     rating = db.Column(db.Integer, nullable=False)
-    __table_args__ = (db.UniqueConstraint('user_id', 'recipe_id', name='_user_recipe_uc'),)
+    __table_args__ = (
+        db.UniqueConstraint("user_id", "recipe_id", name="_user_recipe_uc"),
+    )
